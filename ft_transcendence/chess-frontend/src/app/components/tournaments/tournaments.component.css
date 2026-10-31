@@ -1,0 +1,150 @@
+.tournaments {
+  width: 100%;
+  min-width: 0;
+  margin: 0 auto 24px;
+  padding: 0;
+}
+
+.tournaments-header,
+.tournament-heading,
+.create-form,
+.tournament-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.tournaments-header h2,
+.tournament h3 {
+  margin: 0;
+}
+
+.create-form {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+
+.create-form label {
+  display: grid;
+  gap: 4px;
+}
+
+.create-form input,
+.create-form select {
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 1px solid #cbd4c9;
+  border-radius: 4px;
+  background: #fff;
+  color: #1d2924;
+  font: inherit;
+}
+
+.create-form button,
+.tournament button {
+  min-height: 44px;
+  padding: 6px 12px;
+  border: 0;
+  background: #18372b;
+  color: white;
+  cursor: pointer;
+}
+
+.tournament .delete-button {
+  min-height: 36px;
+  margin-top: 12px;
+  padding: 6px 10px;
+  border: 1px solid #d99a8d;
+  background: transparent;
+  color: #963f30;
+}
+
+.tournament-list {
+  display: grid;
+  gap: 12px;
+}
+
+.tournament {
+  border-top: 1px solid #dce2d9;
+  padding: 14px 0;
+}
+
+.tournament-heading p,
+.participants,
+.empty {
+  margin: 6px 0 0;
+  color: #68736b;
+}
+
+.tournament-heading > div {
+  min-width: 0;
+}
+
+.tournament h3,
+.tournament p {
+  overflow-wrap: anywhere;
+}
+
+.capacity {
+  font-variant-numeric: tabular-nums;
+}
+
+.tournament-actions {
+  justify-content: flex-start;
+  margin-top: 12px;
+}
+
+.bracket {
+  display: grid;
+  gap: 6px;
+  padding-left: 22px;
+}
+
+.bracket li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 0;
+}
+
+.error {
+  color: #a73328;
+}
+
+@media (max-width: 600px) {
+  .tournaments {
+    padding: 12px;
+  }
+
+  .create-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: end;
+  }
+
+  .create-form label {
+    min-width: 0;
+  }
+
+  .create-form input,
+  .create-form select {
+    width: 100%;
+  }
+
+  .create-form button {
+    grid-column: 1 / -1;
+  }
+
+  .tournaments-header,
+  .tournament-heading {
+    align-items: flex-start;
+  }
+
+  .bracket li {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}

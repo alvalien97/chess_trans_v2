@@ -1,0 +1,97 @@
+<div class="board-wrap">
+  @if (errorMessage()) {
+    <p class="error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  @if (queueEnabled) {
+    @if (queueState() === 'IDLE') {
+      <section class="matchmaking-prompt">
+        <h2>Partida 1 contra 1</h2>
+        <p>Busca un rival conectado para empezar otra partida.</p>
+        <button type="button" (click)="findOpponent()">Buscar rival</button>
+      </section>
+    } @else if (queueState() === 'WAITING') {
+      <section class="matchmaking-prompt" aria-live="polite">
+        <h2>Buscando rival</h2>
+        <p>Te asignaremos blancas o negras cuando encuentre otra persona.</p>
+        <button type="button" (click)="cancelSearch()">Cancelar búsqueda</button>
+      </section>
+    }
+  }
+
+  @if (!queueEnabled) {
+    @if (queueState() === 'MATCHED' || queueState() === 'FINISHED') {
+      <p class="match-info">
+        Contra <strong>{{ opponent() }}</strong>
+        · Juegas con {{ playerColor() === 0 ? 'blancas' : 'negras' }}
+      </p>
+      @if (queueState() === 'MATCHED') {
+        <p class="turn" role="status" aria-live="polite">
+          @if (currentColor() === playerColor()) {
+            Tu turno: {{ currentColor() === 0 ? 'blancas' : 'negras' }}
+          } @else {
+            Turno del rival: {{ currentColor() === 0 ? 'blancas' : 'negras' }}
+          }
+        </p>
+      }
+      @if (gameStatus() === 'CHECK') {
+        <p class="game-status" role="status" aria-live="polite">Jaque</p>
+      } @else if (gameStatus() === 'CHECKMATE') {
+        <p class="game-status" role="status" aria-live="polite">Jaque mate</p>
+      } @else if (gameStatus() === 'DRAW' || gameStatus() === 'STALEMATE') {
+        <p class="game-status" role="status" aria-live="polite">Tablas</p>
+      }
+      @if (resultMessage()) {
+        <p class="game-result" role="status" aria-live="polite">{{ resultMessage() }}</p>
+      }
+      @if (queueState() === 'MATCHED') {
+        <div class="game-actions">
+          @if (drawOfferByUserId() === null) {
+            <button type="button" (click)="offerDraw()">Ofrecer tablas</button>
+          } @else if (drawOfferByUserId() === currentUserId) {
+            <span class="draw-pending" role="status">Oferta de tablas enviada</span>
+          } @else {
+            <span class="draw-pending" role="status">Tu rival ofrece tablas</span>
+            <button type="button" (click)="respondToDraw(true)">Aceptar tablas</button>
+            <button type="button" class="secondary-action" (click)="respondToDraw(false)">Rechazar</button>
+          }
+          <button type="button" class="resign-action" (click)="resign()">Rendirse</button>
+        </div>
+      }
+      @if (queueState() === 'FINISHED') {
+        <button type="button" class="close-game" (click)="closeFinishedGame()">Cerrar partida</button>
+      }
+    }
+
+    @if (queueState() === 'MATCHED' || queueState() === 'FINISHED') {
+      <div class="chess-board" [class.preview]="queueState() !== 'MATCHED'"
+        role="grid" aria-label="Tablero de ajedrez, 8 por 8">
+        @for (row of boardRows; track row) {
+          <div class="board-row" role="row" [attr.aria-rowindex]="row + 1">
+            @for (col of boardCols; track col) {
+              <div role="gridcell" [attr.aria-colindex]="col + 1">
+                <button
+                  #squareButton
+                  type="button"
+                  class="square"
+                  [class.light]="isLightSquare(col, row)"
+                  [class.dark]="!isLightSquare(col, row)"
+                  [class.selected]="selectedPiece()?.col === col && selectedPiece()?.row === row"
+                  [attr.aria-label]="getSquareLabel(col, row)"
+                  [attr.aria-pressed]="selectedPiece()?.col === col && selectedPiece()?.row === row"
+                  [attr.aria-disabled]="queueState() !== 'MATCHED' || currentColor() !== playerColor()"
+                  [attr.tabindex]="focusedSquare().col === col && focusedSquare().row === row ? 0 : -1"
+                  (click)="onSquareClick(col, row)"
+                  (keydown)="onSquareKeydown($event, col, row)">
+                  @if (getPieceAt(col, row); as piece) {
+                    <span class="chess-piece">{{ getPieceSymbol(piece) }}</span>
+                  }
+                </button>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+  }
+</div>

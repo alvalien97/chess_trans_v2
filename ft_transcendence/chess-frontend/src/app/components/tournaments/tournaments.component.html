@@ -1,0 +1,82 @@
+<section class="tournaments" aria-labelledby="tournaments-title">
+  <header class="tournaments-header">
+    <h2 id="tournaments-title">Torneos</h2>
+    <span>{{ tournaments().length }} activos</span>
+  </header>
+
+  <form class="create-form" (submit)="$event.preventDefault(); createTournament()">
+    <label>
+      Nombre
+      <input name="tournamentName" [(ngModel)]="tournamentName" maxlength="80" required />
+    </label>
+    <label>
+      Jugadores
+      <select name="maxPlayers" [(ngModel)]="maxPlayers">
+        <option [ngValue]="2">2</option>
+        <option [ngValue]="4">4</option>
+        <option [ngValue]="8">8</option>
+      </select>
+    </label>
+    <button type="submit">Crear torneo</button>
+  </form>
+
+  @if (errorMessage()) {
+    <p class="error" role="alert">{{ errorMessage() }}</p>
+  }
+
+  @if (tournaments().length === 0) {
+    <p class="empty">Todavía no hay torneos.</p>
+  }
+
+  <div class="tournament-list">
+    @for (tournament of tournaments(); track tournament.id) {
+      <article class="tournament">
+        <div class="tournament-heading">
+          <div>
+            <h3>{{ tournament.name }}</h3>
+            <p>Organiza {{ tournament.owner }} · {{ tournament.status }}</p>
+          </div>
+          <span class="capacity">{{ tournament.participants.length }}/{{ tournament.maxPlayers }}</span>
+        </div>
+
+        @if (tournament.owner === currentUsername && tournament.status === 'WAITING') {
+          <button type="button" class="delete-button" (click)="deleteTournament(tournament)">Eliminar torneo</button>
+        }
+
+        <p class="participants">{{ tournament.participants.join(', ') }}</p>
+
+        <div class="tournament-actions">
+          @if (canJoin(tournament)) {
+            <button type="button" (click)="joinTournament(tournament)">Apuntarme</button>
+          }
+          @if (canStart(tournament)) {
+            <button type="button" (click)="startTournament(tournament)">Iniciar cuadro</button>
+          }
+        </div>
+
+        @if (tournament.matches.length > 0) {
+          <ol class="bracket">
+            @for (match of tournament.matches; track match.id) {
+              <li>
+                <span>R{{ match.round }}.{{ match.number }}</span>
+                <span>{{ match.whitePlayer }} vs {{ match.blackPlayer }}</span>
+                <span>{{ match.winner ? 'Ganador: ' + match.winner
+                  : match.status === 'DRAW' ? 'Empate · sorteo pendiente' : match.status }}</span>
+                @if ((match.status === 'PLAYING' || match.status === 'REMATCH') && isParticipant(tournament)
+                    && (match.whitePlayer === currentUsername || match.blackPlayer === currentUsername)) {
+                  <button type="button" (click)="playMatch(match)">
+                    {{ match.status === 'REMATCH' ? 'Jugar revancha' : 'Jugar' }}
+                  </button>
+                }
+                @if (match.status === 'DRAW' && isParticipant(tournament)
+                    && (match.whitePlayer === currentUsername || match.blackPlayer === currentUsername)) {
+                  <button type="button" (click)="resolveDraw(match)">Sortear ganador</button>
+                }
+              </li>
+            }
+          </ol>
+        }
+      </article>
+    }
+  </div>
+</section>

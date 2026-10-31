@@ -1,0 +1,11 @@
+{
+  "/api": {
+    "target": "https://localhost",
+    "secure": false
+  },
+  "/ws": {
+    "target": "https://localhost",
+    "secure": false,
+    "ws": true
+  }
+}

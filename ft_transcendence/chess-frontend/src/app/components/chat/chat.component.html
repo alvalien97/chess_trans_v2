@@ -1,0 +1,18 @@
+<section class="chat" aria-labelledby="chat-title">
+  <h2 id="chat-title">Chat</h2>
+  <div class="messages" role="log" aria-live="polite" aria-relevant="additions text" aria-atomic="false">
+    @for (message of messages(); track $index) {
+      <p><strong>{{ message.sender }}:</strong> {{ message.content }}</p>
+    }
+  </div>
+  <form class="message-form" (submit)="$event.preventDefault(); sendMessage()">
+    <label for="chat-message">Mensaje</label>
+    <input
+      id="chat-message"
+      name="message"
+      [(ngModel)]="messageInput"
+      maxlength="280"
+      required />
+    <button type="submit">Enviar</button>
+  </form>
+</section>

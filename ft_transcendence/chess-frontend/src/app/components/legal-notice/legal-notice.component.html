@@ -1,0 +1,76 @@
+<main id="main-content" class="legal-screen">
+  <header class="legal-header">
+    <a class="legal-brand" href="#main-content" (click)="$event.preventDefault(); close.emit()">
+      <span aria-hidden="true">♞</span> Chess Club
+    </a>
+    <button type="button" class="legal-back" (click)="close.emit()">Volver a la aplicación</button>
+  </header>
+
+  <nav class="legal-nav" aria-label="Documentos legales">
+    <button type="button" [attr.aria-current]="page === 'privacy' ? 'page' : null"
+      (click)="navigate.emit('privacy')">Política de privacidad</button>
+    <button type="button" [attr.aria-current]="page === 'terms' ? 'page' : null"
+      (click)="navigate.emit('terms')">Términos de servicio</button>
+  </nav>
+
+  <article class="legal-document">
+    <p class="legal-eyebrow">CHESS CLUB · PROYECTO ACADÉMICO</p>
+    @if (page === 'privacy') {
+      <h1 #pageHeading id="legal-title" tabindex="-1">Política de privacidad</h1>
+      <p class="legal-date">Vigente desde el 22 de octubre de 2026</p>
+      <p>Esta política explica qué información utiliza Transcendence Chess, para qué la necesita y qué ocurre con ella en la versión actual de demostración del proyecto.</p>
+
+      <h2>Quién gestiona los datos</h2>
+      <p>La aplicación es un proyecto académico desarrollado por el equipo de Transcendence Chess. No es un servicio comercial. Para consultas sobre privacidad, contacta con el equipo por el canal por el que recibiste acceso a la demostración.</p>
+
+      <h2>Información que tratamos</h2>
+      <ul>
+        <li>Cuenta: nombre de usuario, correo electrónico y contraseña almacenada como hash BCrypt; la contraseña original no se guarda.</li>
+        <li>Perfil y relaciones: avatar que subes, y relaciones de amistad que creas o eliminas.</li>
+        <li>Partidas: participantes, colores, estado y datos de torneos necesarios para organizar partidas y cuadros.</li>
+        <li>Sesión: un token de acceso se conserva en el almacenamiento de sesión del navegador y en memoria en el servidor mientras la sesión está activa.</li>
+        <li>Chat: los mensajes se retransmiten a los participantes conectados; la aplicación actual no ofrece historial persistente del chat.</li>
+      </ul>
+
+      <h2>Uso y almacenamiento</h2>
+      <p>Usamos estos datos para autenticar cuentas, mostrar perfiles y amistades, indicar presencia, coordinar partidas, validar movimientos y gestionar torneos. Las cuentas, amistades y registros de partidas/torneos se guardan en PostgreSQL. El estado activo del tablero, la cola de matchmaking y los tokens de sesión se mantienen en memoria del backend y se pierden al reiniciarlo.</p>
+      <p>El despliegue de demostración enruta el tráfico del navegador por HTTPS con un certificado local autofirmado. Ese certificado no es apropiado para producción. La infraestructura puede generar registros técnicos estándar de acceso; el proyecto no integra publicidad ni analítica de terceros.</p>
+
+      <h2>Conservación y eliminación</h2>
+      <p>Los datos de cuenta se conservan mientras la cuenta exista. Al eliminarla, se borra el avatar, se eliminan las relaciones de amistad, se revocan los tokens y se retira al usuario de la cola de matchmaking. El nombre y el correo se sustituyen por valores anónimos y se conserva el historial de partidas y torneos para no romper sus resultados. Al cerrar sesión, el navegador solicita revocar su token en el servidor; los tokens se mantienen en memoria y se pierden al reiniciar el backend.</p>
+
+      <h2>Opciones del usuario</h2>
+      <p>Puedes cambiar el nombre de usuario y el avatar desde Settings y eliminar la cuenta desde esa misma pantalla. La aplicación no incluye todavía una función para descargar una copia de los datos ni un formulario de solicitudes de privacidad; para consultas, contacta con el equipo del proyecto.</p>
+      <p>Cuando la legislación aplicable reconozca derechos de acceso, rectificación, oposición o supresión, puedes plantear la solicitud al equipo por ese canal. La aplicación no automatiza su tramitación y algunas solicitudes pueden estar limitadas por la conservación de resultados de partidas.</p>
+
+      <h2>Alcance de esta política</h2>
+      <p>Esta información describe el comportamiento de la versión académica actual, no una garantía de cumplimiento legal para un servicio público o comercial. Antes de publicar la aplicación para usuarios externos, el equipo debe definir responsable, contacto, plazos de conservación y procedimientos conforme a la jurisdicción aplicable.</p>
+    } @else {
+      <h1 #pageHeading id="legal-title" tabindex="-1">Términos de servicio</h1>
+      <p class="legal-date">Vigentes desde el 22 de octubre de 2026</p>
+      <p>Estos términos regulan el uso de Transcendence Chess, una demostración académica de ajedrez multijugador. Al crear una cuenta o utilizar la aplicación, aceptas estas condiciones.</p>
+
+      <h2>La aplicación</h2>
+      <p>La aplicación permite crear una cuenta, buscar rivales, jugar partidas de ajedrez, participar en torneos y comunicarse mediante el chat disponible durante la sesión. Es un proyecto en desarrollo, se ofrece con fines educativos y puede cambiar, interrumpirse o dejar de estar disponible.</p>
+
+      <h2>Tu cuenta</h2>
+      <p>Debes proporcionar datos de registro válidos, mantener la confidencialidad de tus credenciales y avisar al equipo del proyecto si detectas un uso no autorizado. Eres responsable de la actividad realizada con tu cuenta mientras tus credenciales sigan siendo válidas.</p>
+
+      <h2>Conducta y contenido</h2>
+      <p>No uses la aplicación para actividades ilegales, intentar acceder a cuentas o partidas ajenas, interferir con el servicio, enviar spam, acosar a otras personas o suplantar su identidad. Solo sube imágenes de avatar que tengas derecho a utilizar y no incluyas datos personales de terceros. Eres responsable del contenido que envíes por el chat; la versión actual no ofrece herramientas automáticas de moderación o bloqueo.</p>
+
+      <h2>Partidas y torneos</h2>
+      <p>El servidor valida los movimientos de ajedrez y determina los resultados conforme a las reglas implementadas. Los torneos disponibles usan cuadros de eliminación para 2, 4 u 8 participantes. Si una partida eliminatoria termina en tablas, el organizador debe resolver quién avanza. No hay premios ni valor monetario asociados a los resultados.</p>
+
+      <h2>Disponibilidad y datos</h2>
+      <p>La aplicación se proporciona “tal cual”, sin garantía de disponibilidad continua ni de conservación de partidas en curso. Los reinicios del backend pueden interrumpir sesiones, partidas activas y búsquedas de rival. Los datos persistidos de cuenta, partidas y torneos pueden conservarse según la Política de privacidad.</p>
+
+      <h2>Suspensión y cambios</h2>
+      <p>El equipo puede limitar temporalmente la demostración para mantenimiento o seguridad. Estos términos pueden actualizarse cuando cambien las funciones del proyecto; la fecha de vigencia mostrada arriba identifica la versión publicada.</p>
+
+      <h2>Contacto</h2>
+      <p>Para comunicar un problema relacionado con estos términos, contacta con el equipo de Transcendence Chess por el canal por el que recibiste acceso a la demostración.</p>
+    }
+    <p class="legal-disclaimer">Versión académica · No sustituye asesoramiento jurídico para un servicio de producción.</p>
+  </article>
+</main>
