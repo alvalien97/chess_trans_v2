@@ -7,7 +7,7 @@
     <section class="auth-intro" aria-label="Chess Club">
       <span class="brand-mark" aria-hidden="true">♞</span>
       <p class="eyebrow">CHESS CLUB · FT_TRANSCENDENCE</p>
-      <h1>Una partida.<br />Un nuevo comienzo.</h1>
+      <h1>Únete al club de los mejores jugadores</h1>
       <div class="auth-board" aria-hidden="true"><span>♜</span><span>♞</span><span>♝</span><span>♛</span></div>
     </section>
     <form class="auth-card" (submit)="$event.preventDefault(); submit()">
@@ -90,8 +90,8 @@
             <div class="welcome-band">
               <div class="welcome-copy">
                 <p class="eyebrow">EL TABLERO ES TUYO</p>
-                <h2 id="welcome-title">Buenas, {{ user()?.username }}.<br /><em>¿Jugamos?</em></h2>
-                <p>Elige tu siguiente movimiento.</p>
+                <h2 id="welcome-title">Bienvenido, {{ user()?.username }}.<br /></h2>
+                <p>Busquemos un rival!</p>
                 <button type="button" class="primary-button hero-action" (click)="navigateTo('game')">
                   Buscar partida <span aria-hidden="true">↗</span>
                 </button>
@@ -113,7 +113,7 @@
                 </button>
                 <button type="button" class="quick-action" (click)="navigateTo('tournament')">
                   <span class="action-number">02</span><span class="action-symbol tournament-symbol" aria-hidden="true">♜</span>
-                  <span class="action-copy"><strong>Torneos</strong><small>Crea un cuadro o únete</small></span>
+                  <span class="action-copy"><strong>Torneos</strong><small>Crea un torneo o únete</small></span>
                   <span class="action-arrow" aria-hidden="true">↗</span>
                 </button>
               </div>
@@ -227,7 +227,7 @@
                   <span class="status-dot" [class.online]="profile.online"></span>
                   {{ profile.online ? 'Conectado ahora' : 'Desconectado' }}
                 </p>
-                <p class="profile-joined">Miembro desde {{ formatJoinDate(profile.joinedAt) }}</p>
+                <p class="profile-joined">Miembro desde el {{ formatJoinDate(profile.joinedAt) }}</p>
               </article>
             }
           </section>
