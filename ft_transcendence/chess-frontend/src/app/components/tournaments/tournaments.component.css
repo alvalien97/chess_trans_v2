@@ -1,3 +1,4 @@
+/* La sección ocupa el ancho disponible; min-width: 0 permite que sus contenidos se encojan dentro de layouts grid/flex. */
 .tournaments {
   width: 100%;
   min-width: 0;
@@ -5,6 +6,7 @@
   padding: 0;
 }
 
+/* Cabeceras, formulario y acciones usan flex para alinear elementos y repartir espacio. */
 .tournaments-header,
 .tournament-heading,
 .create-form,
@@ -15,11 +17,13 @@
   gap: 12px;
 }
 
+/* Se quita el margen de los títulos para alinear sus cajas con el resto de la cabecera. */
 .tournaments-header h2,
 .tournament h3 {
   margin: 0;
 }
 
+/* El formulario envuelve campos cuando falta espacio; cada etiqueta apila texto y control. */
 .create-form {
   justify-content: flex-start;
   flex-wrap: wrap;
@@ -42,6 +46,7 @@
   font: inherit;
 }
 
+/* Botones de acción conservan una altura cómoda, contraste y cursor que indica que son interactivos. */
 .create-form button,
 .tournament button {
   min-height: 44px;
@@ -52,6 +57,7 @@
   cursor: pointer;
 }
 
+/* El borrado se distingue como acción peligrosa con borde y texto rojizos sin fondo sólido. */
 .tournament .delete-button {
   min-height: 36px;
   margin-top: 12px;
@@ -61,6 +67,7 @@
   color: #963f30;
 }
 
+/* Las tarjetas se apilan en una columna con separación constante y borde superior. */
 .tournament-list {
   display: grid;
   gap: 12px;
@@ -78,6 +85,7 @@
   color: #68736b;
 }
 
+/* Los textos largos pueden partirse para no forzar el ancho de la tarjeta; la capacidad usa dígitos alineados. */
 .tournament-heading > div {
   min-width: 0;
 }
@@ -91,6 +99,7 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Acciones y cuadro separan controles y resultados; el cuadro mantiene sangría de lista ordenada. */
 .tournament-actions {
   justify-content: flex-start;
   margin-top: 12px;
@@ -110,11 +119,13 @@
   padding: 8px 0;
 }
 
+/* Los errores usan color de aviso; en móvil el formulario y el cuadro pasan a columnas apiladas. */
 .error {
   color: #a73328;
 }
 
 @media (max-width: 600px) {
+  /* La tarjeta gana espacio interior en móvil y los campos ocupan dos columnas iguales. */
   .tournaments {
     padding: 12px;
   }

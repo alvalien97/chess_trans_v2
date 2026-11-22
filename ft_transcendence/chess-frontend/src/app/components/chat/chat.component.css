@@ -1,3 +1,4 @@
+/* El chat ocupa el ancho disponible y apila título, historial y formulario en una tarjeta oscura. */
 .chat {
   width: 100%;
   min-width: 0;
@@ -10,6 +11,7 @@
   gap: 12px;
 }
 
+/* El historial tiene altura acotada y desplazamiento vertical; el texto largo puede partirse para no desbordar. */
 .messages {
   min-height: 180px;
   max-height: 320px;
@@ -31,6 +33,7 @@
   gap: 8px;
 }
 
+/* La etiqueta ocupa una fila completa; el campo crece y los controles conservan tamaño táctil y contraste. */
 .message-form label {
   flex: 0 0 100%;
 }

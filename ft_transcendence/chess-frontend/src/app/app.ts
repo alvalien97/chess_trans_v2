@@ -1,78 +1,109 @@
+// Herramientas de Angular para crear componentes, observar estado y obtener servicios.
 import { Component, effect, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';//importo modulo de formularios
+// Permite conectar los campos de los formularios con propiedades de esta clase.
+import { FormsModule } from '@angular/forms';
+// Pantallas que se muestran dentro de la aplicación principal.
 import { BoardComponent } from './components/board/board.component';
 import { MatchAssignment } from './components/board/board.component';
 import { ChatComponent } from './components/chat/chat.component';
 import { TournamentsComponent } from './components/tournaments/tournaments.component';
 import { LegalNoticeComponent } from './components/legal-notice/legal-notice.component';
 import type { LegalPage } from './components/legal-notice/legal-notice.component';
-import { AuthService, FriendView, PublicProfile } from './services/auth';//modulo para gestionar usuarios y autenticaciones
+// Servicio de autenticación y tipos de datos que devuelven sus operaciones.
+import { AuthService, FriendView, PublicProfile } from './services/auth';
+// Canal en tiempo real que avisa cuando una amistad se conecta o desconecta.
 import { PresenceWebsocketService } from './services/presence-websocket';
 
+// Secciones disponibles en la navegación principal.
 type AppSection = 'home' | 'game' | 'tournament' | 'settings' | 'profile';
 
 @Component({
-  selector: 'app-root',//define la etiqueta de app asociada
+  // Etiqueta HTML que Angular convierte en la aplicación completa.
+  selector: 'app-root',
+  // Componentes y módulos que puede usar la plantilla principal.
   imports: [FormsModule, BoardComponent, ChatComponent, TournamentsComponent, LegalNoticeComponent],
+  // Archivo HTML que define lo que se ve en cada sección.
   templateUrl: './app.html'
 })
 export class App {
+  // Servicios compartidos para la sesión y el estado de conexión de amistades.
   private auth = inject(AuthService);
   private presence = inject(PresenceWebsocketService);
 
+  // Reutiliza el estado de usuario del servicio de autenticación.
   readonly user = this.auth.user;
+  // Etiquetas e identificadores usados para construir la navegación.
   readonly navigation: { id: AppSection; label: string; number: string }[] = [
     { id: 'home', label: 'Home', number: '01' },
     { id: 'game', label: 'Game', number: '02' },
     { id: 'tournament', label: 'Tournament', number: '03' },
     { id: 'settings', label: 'Settings', number: '04' }
   ];
+  // Sección que está mostrando la aplicación en este momento.
   activeSection = signal<AppSection>('home');
+  // Documento legal abierto, o null cuando la pantalla legal está cerrada.
   legalPage = signal<LegalPage | null>(null);
+  // Indica si el formulario de acceso está en modo login o registro.
   mode = signal<'login' | 'register'>('login');
+  // Campos que se escriben en el formulario de acceso o registro.
   username = '';
   email = '';
   password = '';
+  // Mensaje que se muestra si falla el acceso o registro.
   errorMessage = signal('');
+  // Partidas abiertas por el jugador, identificadas para poder mostrarlas/cerrarlas.
   activeMatches = signal<MatchAssignment[]>([]);
+  // Campos editables de la pantalla de configuración de la cuenta.
   settingsUsername = this.auth.user()?.username ?? '';
   settingsCurrentPassword = '';
   settingsNewPassword = '';
   settingsAvatarUrl = '';
   deleteAccountPassword = '';
+  // Mensajes de resultado de las operaciones de configuración.
   settingsMessage = signal('');
   settingsError = signal('');
+  // Datos de la lista de amistades y del buscador.
   friends = signal<FriendView[]>([]);
   friendSearchQuery = '';
   friendSearchResults = signal<FriendView[]>([]);
   friendSearchMessage = signal('');
   friendSearchLoading = signal(false);
   friendsError = signal('');
+  // Estado del perfil público que se está consultando.
   publicProfile = signal<PublicProfile | null>(null);
   profileLoading = signal(false);
   profileError = signal('');
+  // Recuerda la pantalla anterior para volver a ella al cerrar un perfil.
   private profileReturnSection: AppSection = 'home';
+  // Número que permite ignorar respuestas antiguas si se abre otro perfil enseguida.
   private profileRequestId = 0;
 
   constructor() {
+    // effect vuelve a ejecutar este bloque si cambia el usuario conectado.
     effect(() => {
       const currentUser = this.user();
       if (currentUser) {
+        // Rellena la configuración con los datos actuales de la cuenta.
         this.settingsUsername = currentUser.username;
         this.settingsAvatarUrl = currentUser.avatarUrl ?? '';
+        // Carga las amistades y empieza a escuchar cambios de conexión.
         this.loadFriends();
         this.presence.connect((update) => {
+          // Actualiza el estado online en la lista de amigos.
           this.friends.update((friends) => friends.map((friend) => friend.id === update.userId
             ? { ...friend, online: update.online }
             : friend));
+          // Actualiza también los resultados visibles del buscador.
           this.friendSearchResults.update((results) => results.map((result) => result.id === update.userId
             ? { ...result, online: update.online }
             : result));
+          // Si el perfil abierto es de esa persona, actualiza su presencia también.
           this.publicProfile.update((profile) => profile?.id === update.userId
             ? { ...profile, online: update.online }
             : profile);
         });
       } else {
+        // Sin sesión no hay que recibir presencia ni conservar listas de la cuenta anterior.
         this.presence.disconnect();
         this.friends.set([]);
         this.friendSearchResults.set([]);
@@ -81,34 +112,43 @@ export class App {
     });
   }
 
+  // Envía el formulario de acceso o registro según el modo seleccionado.
   submit() {
+    // Limpia un error anterior antes de intentar la nueva petición.
     this.errorMessage.set('');
     const request$ = this.mode() === 'register'
       ? this.auth.register({ username: this.username, email: this.email, password: this.password })
-      : this.auth.login({ email: this.email, password: this.password });//si estas en el registro compruebo pasandole los datos
+      : this.auth.login({ email: this.email, password: this.password });
 
-    request$.subscribe({//se suscribe y comprueba que no haya errores
+    // subscribe inicia la petición y define qué hacer con éxito o con error.
+    request$.subscribe({
       next: (response) => {
+        // Actualiza el nombre que se muestra en la configuración.
         this.settingsUsername = response.user.username;
       },
       error: (err) => this.errorMessage.set(err.error?.error ?? 'No se pudo autenticar.')
     });
   }
 
-  logout() {//metodo para cerrar sesion
+  // Cierra la sesión y vuelve a una pantalla limpia de inicio.
+  logout() {
+    // Evita dejar la aplicación en una sección privada o conservar partidas visibles.
     this.activeSection.set('home');
     this.activeMatches.set([]);
     this.auth.logout().subscribe({ error: () => {} });
   }
 
+  // Cambia la sección principal que se muestra.
   navigateTo(section: AppSection) {
     this.activeSection.set(section);
   }
 
+  // Abre el documento legal seleccionado.
   openLegal(page: LegalPage) {
     this.legalPage.set(page);
   }
 
+  // Cierra el documento legal y devuelve el foco al control que lo abrió.
   closeLegal() {
     const page = this.legalPage();
     this.legalPage.set(null);
@@ -117,25 +157,32 @@ export class App {
     }
   }
 
+  // Busca el título de la sección activa para mostrarlo en la cabecera.
   sectionTitle() {
     return this.navigation.find((item) => item.id === this.activeSection())?.label
       ?? (this.activeSection() === 'profile' ? 'Perfil de jugador' : 'Home');
   }
 
+  // Abre un perfil público y solicita sus datos al backend.
   openProfile(userId: number) {
+    // Recuerda desde qué sección se abrió el perfil.
     this.profileReturnSection = this.activeSection() === 'profile' ? 'home' : this.activeSection();
+    // Limpia los datos anteriores y muestra el estado de carga.
     this.publicProfile.set(null);
     this.profileError.set('');
     this.profileLoading.set(true);
     this.activeSection.set('profile');
+    // Identifica esta petición para descartar respuestas de perfiles abiertos antes.
     const requestId = ++this.profileRequestId;
     this.auth.getPublicProfile(userId).subscribe({
       next: (profile) => {
+        // Si el usuario abrió otro perfil, no se debe mostrar esta respuesta antigua.
         if (requestId !== this.profileRequestId) return;
         this.publicProfile.set(profile);
         this.profileLoading.set(false);
       },
       error: (error) => {
+        // También se ignoran errores de una consulta que ya dejó de ser la actual.
         if (requestId !== this.profileRequestId) return;
         this.profileError.set(error.error?.error ?? 'No se pudo cargar el perfil.');
         this.profileLoading.set(false);
@@ -143,36 +190,46 @@ export class App {
     });
   }
 
+  // Cierra el perfil y vuelve a la sección desde la que se había abierto.
   closeProfile() {
     this.profileRequestId++;
     this.activeSection.set(this.profileReturnSection === 'profile' ? 'home' : this.profileReturnSection);
   }
 
+  // Convierte la fecha ISO recibida del backend a una fecha legible en español.
   formatJoinDate(joinedAt: string) {
     return new Intl.DateTimeFormat('es-ES', { dateStyle: 'long' }).format(new Date(joinedAt));
   }
 
-  selectMatch(match: MatchAssignment) {//metodo para seleccionar match
+  // Añade la partida seleccionada a la lista y muestra la sección del tablero.
+  selectMatch(match: MatchAssignment) {
+    // Evita abrir dos veces la misma partida.
     this.activeMatches.update((matches) => matches.some((item) => item.gameId === match.gameId)
       ? matches
       : [...matches, match]);
     this.activeSection.set('game');
   }
 
+  // Elimina de la interfaz la partida cerrada.
   closeMatch(gameId: string) {
     this.activeMatches.update((matches) => matches.filter((match) => match.gameId !== gameId));
   }
 
+  // Guarda cambios de nombre, contraseña o avatar en la cuenta.
   saveAccountChanges() {
+    // Limpia avisos de una operación anterior.
     this.settingsMessage.set('');
     this.settingsError.set('');
     const currentUser = this.user();
+    // Solo una sesión iniciada puede cambiar sus datos.
     if (!currentUser) return;
 
+    // La contraseña actual se envía para que el backend confirme la identidad.
     const payload: { currentPassword: string; username?: string; newPassword?: string; avatarUrl?: string | null } = {
       currentPassword: this.settingsCurrentPassword
     };
     const username = this.settingsUsername.trim();
+    // Añade al payload únicamente los campos que realmente han cambiado.
     if (username !== currentUser.username) payload.username = username;
     if (this.settingsNewPassword) payload.newPassword = this.settingsNewPassword;
     if (this.settingsAvatarUrl !== (currentUser.avatarUrl ?? '')) payload.avatarUrl = this.settingsAvatarUrl || null;
@@ -181,6 +238,7 @@ export class App {
       return;
     }
 
+    // Envía los cambios y actualiza los campos locales según la respuesta.
     this.auth.updateAccount(payload).subscribe({
       next: (updatedUser) => {
         this.settingsUsername = updatedUser.username;
@@ -193,17 +251,21 @@ export class App {
     });
   }
 
+  // Lee el archivo de imagen seleccionado y lo prepara para mostrarlo/guardarlo como texto.
   onAvatarSelected(event: Event) {
+    // Obtiene el campo de archivo y el primer archivo seleccionado.
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
     this.settingsError.set('');
     if (file.size > 3_700_000) {
+      // Rechaza imágenes demasiado grandes antes de leerlas.
       this.settingsError.set('La imagen no puede superar 3,7 MB.');
       input.value = '';
       return;
     }
 
+    // FileReader transforma el archivo en una URL de datos que se puede usar como imagen.
     const reader = new FileReader();
     reader.onload = () => {
       this.settingsAvatarUrl = String(reader.result ?? '');
@@ -212,6 +274,7 @@ export class App {
     reader.readAsDataURL(file);
   }
 
+  // Pide al backend las amistades de la persona conectada.
   loadFriends() {
     this.auth.getFriends().subscribe({
       next: (friends) => this.friends.set(friends),
@@ -219,10 +282,12 @@ export class App {
     });
   }
 
+  // Busca usuarios por nombre y actualiza los resultados o el mensaje correspondiente.
   searchUsers() {
     this.friendsError.set('');
     this.friendSearchMessage.set('');
     const query = this.friendSearchQuery.trim();
+    // Exige dos caracteres para evitar consultas demasiado cortas.
     if (query.length < 2) {
       this.friendSearchResults.set([]);
       this.friendSearchMessage.set('Escribe al menos 2 caracteres para buscar.');
@@ -230,6 +295,7 @@ export class App {
     }
 
     this.friendSearchLoading.set(true);
+    // Marca la búsqueda como activa y la desactiva al recibir éxito o error.
     this.auth.searchUsers(query).subscribe({
       next: (results) => {
         this.friendSearchResults.set(results);
@@ -244,6 +310,7 @@ export class App {
     });
   }
 
+  // Añade una persona como amistad y refresca la lista.
   addFriend(username: string) {
     this.friendsError.set('');
     this.auth.addFriend(username).subscribe({
@@ -256,6 +323,7 @@ export class App {
     });
   }
 
+  // Elimina una amistad de la lista y del backend.
   removeFriend(friendId: number) {
     this.friendsError.set('');
     this.auth.removeFriend(friendId).subscribe({
@@ -264,12 +332,14 @@ export class App {
     });
   }
 
+  // Pide confirmar la eliminación y luego solicita borrar la cuenta.
   deleteAccount() {
     this.settingsMessage.set('');
     this.settingsError.set('');
     if (!window.confirm('¿Eliminar tu cuenta? Se borrarán tu avatar y amistades; el historial de partidas se conservará anonimizado.')) {
       return;
     }
+    // Si el backend confirma el borrado, cierra la sesión y limpia las partidas abiertas.
     this.auth.deleteAccount(this.deleteAccountPassword).subscribe({
       next: () => {
         this.activeSection.set('home');
@@ -280,4 +350,3 @@ export class App {
     });
   }
 }
-//Conecto tablero chat y torneos

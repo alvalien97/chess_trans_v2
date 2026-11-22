@@ -63,7 +63,7 @@ public class StompAuthInterceptor implements ChannelInterceptor {
         if (StompCommand.SEND.equals(accessor.getCommand()) || StompCommand.SUBSCRIBE.equals(accessor.getCommand())) {
             //Obtiene la identidad asociada a la conexión.
             Principal principal = accessor.getUser();
-            // Sin identidad no se permite enviar ni suscribirse.
+            //Sin identidad no se permite enviar ni suscribirse.
             if (principal == null) {
                 throw new MessageDeliveryException(message, "Autenticación requerida.");
             }

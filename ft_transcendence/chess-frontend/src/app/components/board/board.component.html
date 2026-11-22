@@ -1,15 +1,20 @@
+<!-- Contenedor del tablero y de los avisos o controles relacionados con la partida. -->
 <div class="board-wrap">
+  <!-- Los errores se exponen como alerta accesible cuando hay un mensaje que mostrar. -->
   @if (errorMessage()) {
     <p class="error" role="alert">{{ errorMessage() }}</p>
   }
 
+  <!-- La búsqueda de rivales se muestra solo si el componente está en modo de cola. -->
   @if (queueEnabled) {
+    <!-- Estado IDLE ofrece iniciar la búsqueda; WAITING permite cancelarla mientras se espera. -->
     @if (queueState() === 'IDLE') {
       <section class="matchmaking-prompt">
         <h2>Partida 1 contra 1</h2>
         <p>Busca un rival conectado para empezar otra partida.</p>
         <button type="button" (click)="findOpponent()">Buscar rival</button>
       </section>
+    <!-- aria-live anuncia los cambios del estado de búsqueda sin mover el foco. -->
     } @else if (queueState() === 'WAITING') {
       <section class="matchmaking-prompt" aria-live="polite">
         <h2>Buscando rival</h2>
@@ -19,12 +24,15 @@
     }
   }
 
+  <!-- Con queueEnabled desactivado se presenta la partida seleccionada o recién finalizada. -->
   @if (!queueEnabled) {
     @if (queueState() === 'MATCHED' || queueState() === 'FINISHED') {
+      <!-- Las interpolaciones muestran rival y color asignado a este jugador. -->
       <p class="match-info">
         Contra <strong>{{ opponent() }}</strong>
         · Juegas con {{ playerColor() === 0 ? 'blancas' : 'negras' }}
       </p>
+      <!-- El turno se comunica como estado dinámico para lectores de pantalla. -->
       @if (queueState() === 'MATCHED') {
         <p class="turn" role="status" aria-live="polite">
           @if (currentColor() === playerColor()) {
@@ -34,6 +42,7 @@
           }
         </p>
       }
+      <!-- @if y @else if seleccionan un único estado visible del juego. -->
       @if (gameStatus() === 'CHECK') {
         <p class="game-status" role="status" aria-live="polite">Jaque</p>
       } @else if (gameStatus() === 'CHECKMATE') {
@@ -41,9 +50,11 @@
       } @else if (gameStatus() === 'DRAW' || gameStatus() === 'STALEMATE') {
         <p class="game-status" role="status" aria-live="polite">Tablas</p>
       }
+      <!-- resultMessage se anuncia cuando la partida tiene un resultado que mostrar. -->
       @if (resultMessage()) {
         <p class="game-result" role="status" aria-live="polite">{{ resultMessage() }}</p>
       }
+      <!-- Los controles de tablas dependen de si hay una oferta y de quién la envió. -->
       @if (queueState() === 'MATCHED') {
         <div class="game-actions">
           @if (drawOfferByUserId() === null) {
@@ -58,18 +69,24 @@
           <button type="button" class="resign-action" (click)="resign()">Rendirse</button>
         </div>
       }
+      <!-- Una partida finalizada ofrece cerrarla para retirar su tablero de la vista. -->
       @if (queueState() === 'FINISHED') {
         <button type="button" class="close-game" (click)="closeFinishedGame()">Cerrar partida</button>
       }
     }
 
+    <!-- El tablero interactivo solo aparece en partidas jugadas o ya terminadas. -->
     @if (queueState() === 'MATCHED' || queueState() === 'FINISHED') {
+      <!-- role=grid, row y gridcell describen la cuadrícula; aria-label da contexto y preview aplica su estado visual. -->
       <div class="chess-board" [class.preview]="queueState() !== 'MATCHED'"
         role="grid" aria-label="Tablero de ajedrez, 8 por 8">
+        <!-- Cada fila se sigue con su propio valor; aria-rowindex comunica su posición empezando en uno. -->
         @for (row of boardRows; track row) {
           <div class="board-row" role="row" [attr.aria-rowindex]="row + 1">
+            <!-- Cada columna forma una celda accesible y aria-colindex comunica su posición empezando en uno. -->
             @for (col of boardCols; track col) {
               <div role="gridcell" [attr.aria-colindex]="col + 1">
+                <!-- Cada botón representa una casilla; sus bindings describen estado, foco y selección y capturan ratón y teclado. -->
                 <button
                   #squareButton
                   type="button"
@@ -83,6 +100,7 @@
                   [attr.tabindex]="focusedSquare().col === col && focusedSquare().row === row ? 0 : -1"
                   (click)="onSquareClick(col, row)"
                   (keydown)="onSquareKeydown($event, col, row)">
+                  <!-- La pieza solo se dibuja si existe; 'as piece' permite reutilizarla dentro del bloque. -->
                   @if (getPieceAt(col, row); as piece) {
                     <span class="chess-piece">{{ getPieceSymbol(piece) }}</span>
                   }

@@ -1,11 +1,17 @@
+/* El componente se comporta como bloque y reserva la altura completa de la ventana. */
 :host { display: block; min-height: 100vh; }
+/* El documento usa padding adaptable, color de fondo y texto definidos mediante variables con valores alternativos. */
 .legal-screen { min-height: 100vh; padding: 24px clamp(16px, 5vw, 72px) 56px; background: var(--paper, #f5f7f1); color: var(--ink, #1d2924); }
+/* Cabecera flex alinea marca y retorno, limita el ancho de lectura y dibuja una separación inferior. */
 .legal-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; max-width: 960px; margin: 0 auto; padding-bottom: 18px; border-bottom: 1px solid var(--line, #dce2d9); }
+/* La marca y su icono se alinean en fila; el icono cuadrado centra su símbolo. */
 .legal-brand { display: inline-flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; font-weight: 700; }
 .legal-brand span { display: grid; width: 38px; aspect-ratio: 1; place-items: center; background: var(--lime, #d7f36a); color: var(--forest, #18372b); font: 1.7rem Georgia, serif; }
 .legal-back, .legal-nav button { min-height: 44px; padding: 9px 12px; border: 1px solid var(--line, #dce2d9); background: white; color: inherit; font: inherit; cursor: pointer; }
+/* La navegación admite varias filas en anchos pequeños; el botón actual usa alto contraste. */
 .legal-nav { display: flex; flex-wrap: wrap; gap: 8px; max-width: 800px; margin: 28px auto 0; }
 .legal-nav button[aria-current="page"] { border-color: var(--forest, #18372b); background: var(--forest, #18372b); color: white; }
+/* El documento se centra y limita a una medida cómoda de lectura, con interlineado amplio. */
 .legal-document { max-width: 800px; margin: 0 auto; padding: 28px 0 0; line-height: 1.7; }
 .legal-eyebrow { color: #526a57; font-size: .72rem; font-weight: 700; }
 .legal-document h1 { margin: 10px 0 4px; font: 500 2.35rem/1.15 Georgia, serif; }
@@ -14,10 +20,12 @@
 .legal-document h2 { margin: 28px 0 6px; font: 600 1.15rem/1.35 'Avenir Next', 'Segoe UI', sans-serif; }
 .legal-document p { max-width: 75ch; }
 .legal-document li { max-width: 75ch; margin: 8px 0; padding-left: 4px; }
+/* La nota final se separa con una línea y tipografía secundaria; los controles muestran foco visible. */
 .legal-disclaimer { margin-top: 36px; padding-top: 16px; border-top: 1px solid var(--line, #dce2d9); color: #58655c; font-size: .85rem; }
 button:focus-visible, a:focus-visible { outline: 3px solid #18372b; outline-offset: 3px; }
 
 @media (max-width: 480px) {
+  /* En pantallas estrechas se reduce el espacio superior y se adapta la cabecera y el título. */
   .legal-screen { padding-top: 14px; }
   .legal-header { align-items: flex-start; }
   .legal-back { max-width: 50%; }

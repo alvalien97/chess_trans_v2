@@ -1,5 +1,7 @@
+<!-- main identifica el contenido principal; el encabezado y navegación permiten volver o cambiar documento. -->
 <main id="main-content" class="legal-screen">
   <header class="legal-header">
+    <!-- El enlace de marca evita el salto del navegador y emite el cierre de la vista legal. -->
     <a class="legal-brand" href="#main-content" (click)="$event.preventDefault(); close.emit()">
       <span aria-hidden="true">♞</span> Chess Club
     </a>
@@ -7,15 +9,19 @@
   </header>
 
   <nav class="legal-nav" aria-label="Documentos legales">
+    <!-- aria-label nombra la navegación; aria-current marca cuál documento se está leyendo. -->
     <button type="button" [attr.aria-current]="page === 'privacy' ? 'page' : null"
       (click)="navigate.emit('privacy')">Política de privacidad</button>
     <button type="button" [attr.aria-current]="page === 'terms' ? 'page' : null"
       (click)="navigate.emit('terms')">Términos de servicio</button>
   </nav>
 
+  <!-- article agrupa el documento seleccionado y su contenido. -->
   <article class="legal-document">
     <p class="legal-eyebrow">CHESS CLUB · PROYECTO ACADÉMICO</p>
+    <!-- El bloque condicional cambia el contenido sin duplicar la estructura exterior del documento. -->
     @if (page === 'privacy') {
+      <!-- pageHeading permite al componente enfocar el título; tabindex=-1 admite foco programático sin añadirlo al tabulador. -->
       <h1 #pageHeading id="legal-title" tabindex="-1">Política de privacidad</h1>
       <p class="legal-date">Vigente desde el 22 de octubre de 2026</p>
       <p>Esta política explica qué información utiliza Transcendence Chess, para qué la necesita y qué ocurre con ella en la versión actual de demostración del proyecto.</p>
@@ -46,6 +52,7 @@
       <h2>Alcance de esta política</h2>
       <p>Esta información describe el comportamiento de la versión académica actual, no una garantía de cumplimiento legal para un servicio público o comercial. Antes de publicar la aplicación para usuarios externos, el equipo debe definir responsable, contacto, plazos de conservación y procedimientos conforme a la jurisdicción aplicable.</p>
     } @else {
+      <!-- En la rama alternativa se muestra el documento de términos con el mismo punto de foco accesible. -->
       <h1 #pageHeading id="legal-title" tabindex="-1">Términos de servicio</h1>
       <p class="legal-date">Vigentes desde el 22 de octubre de 2026</p>
       <p>Estos términos regulan el uso de Transcendence Chess, una demostración académica de ajedrez multijugador. Al crear una cuenta o utilizar la aplicación, aceptas estas condiciones.</p>

@@ -1,23 +1,32 @@
+<!-- Enlace de teclado que permite saltar la navegación y llegar directamente al contenido principal. -->
 <a class="skip-link" href="#main-content">Saltar al contenido</a>
 
+<!-- @if muestra una única vista legal cuando hay un documento seleccionado; 'as page' guarda su valor localmente. -->
 @if (legalPage(); as page) {
+  <!-- Las propiedades entre corchetes pasan datos y los eventos entre paréntesis notifican acciones al componente padre. -->
   <app-legal-notice [page]="page" (close)="closeLegal()" (navigate)="openLegal($event)" />
 } @else if (!user()) {
+  <!-- Esta rama contiene el acceso y registro para las personas que aún no han iniciado sesión. -->
   <main id="main-content" class="auth-screen">
+    <!-- aria-label da nombre accesible a la introducción, que funciona como bloque visual de marca. -->
     <section class="auth-intro" aria-label="Chess Club">
+      <!-- El símbolo es decorativo; aria-hidden evita que un lector de pantalla lo anuncie. -->
       <span class="brand-mark" aria-hidden="true">♞</span>
       <p class="eyebrow">CHESS CLUB · FT_TRANSCENDENCE</p>
       <h1>Únete al club de los mejores jugadores</h1>
       <div class="auth-board" aria-hidden="true"><span>♜</span><span>♞</span><span>♝</span><span>♛</span></div>
     </section>
+    <!-- submit evita la recarga normal del navegador y llama al método Angular de autenticación. -->
     <form class="auth-card" (submit)="$event.preventDefault(); submit()">
       <p class="eyebrow">TU MESA TE ESPERA</p>
       <h2>{{ mode() === 'register' ? 'Crear cuenta' : 'Iniciar sesión' }}</h2>
+      <!-- El formulario de registro añade el nombre; ngModel mantiene el campo sincronizado con el componente. -->
       @if (mode() === 'register') {
         <label for="username">Usuario</label>
         <input id="username" name="username" [(ngModel)]="username" autocomplete="username"
           minlength="3" maxlength="32" required />
       }
+      <!-- ngModel enlaza el correo y la contraseña con el estado del componente; autocomplete ayuda al navegador. -->
       <label for="email">Email</label>
       <input id="email" name="email" type="email" [(ngModel)]="email"
         autocomplete="email" required />
@@ -25,43 +34,55 @@
       <input id="password" name="password" type="password" [(ngModel)]="password"
         autocomplete="{{ mode() === 'register' ? 'new-password' : 'current-password' }}"
         minlength="8" maxlength="72" required />
+      <!-- Los errores se anuncian inmediatamente a tecnologías de asistencia mediante role="alert". -->
       @if (errorMessage()) {
         <p class="error" role="alert">{{ errorMessage() }}</p>
       }
+      <!-- El texto del botón cambia según el modo actual y el envío invoca la autenticación. -->
       <button type="submit" class="primary-button">{{ mode() === 'register' ? 'Registrarse' : 'Entrar' }}</button>
+      <!-- Al hacer clic, cambia entre registro e inicio de sesión; la interpolación actualiza su etiqueta. -->
       <button type="button" class="text-button"
         (click)="mode.set(mode() === 'register' ? 'login' : 'register')">
         {{ mode() === 'register' ? 'Ya tengo cuenta' : 'Crear una cuenta' }}
       </button>
     </form>
+    <!-- Enlaces de acceso a los documentos legales, nombrados para lectores de pantalla. -->
     <footer class="legal-links" aria-label="Información legal">
       <button type="button" data-legal="privacy" (click)="openLegal('privacy')">Política de privacidad</button>
       <button type="button" data-legal="terms" (click)="openLegal('terms')">Términos de servicio</button>
     </footer>
   </main>
 } @else {
+  <!-- Tras iniciar sesión, este contenedor organiza la barra lateral y el área de trabajo. -->
   <div class="app-shell">
     <aside class="sidebar">
+      <!-- La marca también funciona como acceso a inicio; aria-label ofrece un nombre claro al enlace. -->
       <a class="brand" (click)="navigateTo('home')" href="#main-content" aria-label="Chess Club, Home">
         <span class="brand-mark" aria-hidden="true">♞</span>
         <span class="brand-name">Chess Club<small>FT_TRANSCENDENCE</small></span>
       </a>
 
+      <!-- La navegación tiene una etiqueta accesible; @for crea un botón por cada opción del menú. -->
       <nav class="primary-nav" aria-label="Navegación principal">
         <p class="nav-caption">MENÚ</p>
+        <!-- track usa un identificador estable para que Angular pueda reutilizar cada botón al actualizar la lista. -->
         @for (item of navigation; track item.id) {
+          <!-- Las clases y aria-current reflejan la sección activa; click cambia la sección mostrada. -->
           <button type="button" class="nav-item" [class.active]="activeSection() === item.id"
             [attr.aria-current]="activeSection() === item.id ? 'page' : null"
             (click)="navigateTo(item.id)">
             <span class="nav-number">{{ item.number }}</span>
             <span>{{ item.label }}</span>
+            <!-- El marcador solo se renderiza para la sección actual y se oculta a lectores de pantalla por ser decorativo. -->
             @if (activeSection() === item.id) { <span class="nav-marker" aria-hidden="true"></span> }
           </button>
         }
       </nav>
 
       <div class="sidebar-footer">
+        <!-- La variable local currentUser evita repetir la lectura del usuario actual en este bloque. -->
         @if (user(); as currentUser) {
+          <!-- El avatar es imagen si existe; de lo contrario se muestra una inicial decorativa. -->
           <button type="button" class="user-chip" (click)="navigateTo('settings')">
             @if (currentUser.avatarUrl) {
               <img class="user-avatar user-avatar-image" [src]="currentUser.avatarUrl" [alt]="currentUser.username" />
@@ -71,12 +92,15 @@
             <span class="user-details"><strong>{{ currentUser.username }}</strong><small>Jugador</small></span>
           </button>
         }
+        <!-- El control de salida ejecuta la acción de cierre de sesión. -->
         <button type="button" class="logout-button" (click)="logout()"><span aria-hidden="true">↗</span> Salir</button>
       </div>
     </aside>
 
+    <!-- main identifica el destino del enlace para saltar al contenido principal. -->
     <main id="main-content" class="workspace">
       <header class="workspace-header">
+        <!-- Las interpolaciones insertan el nombre visible de la sección actual en la cabecera. -->
         <div>
           <p class="eyebrow">CHESS CLUB <span>/</span> {{ sectionTitle() }}</p>
           <h1>{{ sectionTitle() }}</h1>
@@ -84,14 +108,19 @@
         <span class="online-status"><span></span> En línea</span>
       </header>
 
+      <!-- @switch selecciona el contenido que corresponde a la sección activa. -->
       @switch (activeSection()) {
+        <!-- Cada @case representa una pantalla de la aplicación; Angular muestra solo la coincidencia. -->
         @case ('home') {
+          <!-- aria-labelledby conecta esta sección con su título visible. -->
           <section class="home-view" aria-labelledby="welcome-title">
             <div class="welcome-band">
               <div class="welcome-copy">
                 <p class="eyebrow">EL TABLERO ES TUYO</p>
+                <!-- El nombre del usuario se inserta en el saludo mediante interpolación. -->
                 <h2 id="welcome-title">Bienvenido, {{ user()?.username }}.<br /></h2>
                 <p>Busquemos un rival!</p>
+                <!-- El clic lleva a la vista de juego; la flecha es decorativa. -->
                 <button type="button" class="primary-button hero-action" (click)="navigateTo('game')">
                   Buscar partida <span aria-hidden="true">↗</span>
                 </button>
@@ -100,11 +129,13 @@
               <span class="hero-index" aria-hidden="true">01 / 64</span>
             </div>
 
+            <!-- Cada sección se nombra con su encabezado para facilitar la navegación asistida. -->
             <section class="quick-section" aria-labelledby="quick-title">
               <div class="section-heading">
                 <div><p class="eyebrow">SIGUIENTE PASO</p><h2 id="quick-title">Entra en juego</h2></div>
                 <span>02 opciones</span>
               </div>
+              <!-- Las acciones rápidas cambian de vista y sus iconos decorativos no se anuncian. -->
               <div class="quick-actions">
                 <button type="button" class="quick-action" (click)="navigateTo('game')">
                   <span class="action-number">01</span><span class="action-symbol" aria-hidden="true">♟</span>
@@ -124,20 +155,25 @@
                 <div><p class="eyebrow">SOCIAL</p><h2 id="friends-title">Amigos</h2></div>
                 <span>{{ friends().length }} contactos</span>
               </div>
+              <!-- El formulario cancela el envío por defecto y llama a la búsqueda Angular. -->
               <div class="friends-panel">
                 <form class="friend-form" (submit)="$event.preventDefault(); searchUsers()">
                   <label for="friend-search">Buscar usuario</label>
+                  <!-- ngModel conecta la búsqueda; disabled impide repetirla mientras está en curso. -->
                   <input id="friend-search" name="friendSearchQuery" [(ngModel)]="friendSearchQuery"
                     placeholder="Nombre de usuario" maxlength="32" />
                   <button type="submit" class="primary-button" [disabled]="friendSearchLoading()">
                     {{ friendSearchLoading() ? 'Buscando...' : 'Buscar' }}
                   </button>
                 </form>
+                <!-- Los estados de error y resultado solo aparecen cuando contienen información. -->
                 @if (friendsError()) { <p class="error" role="alert">{{ friendsError() }}</p> }
                 @if (friendSearchMessage()) { <p class="search-message" role="status">{{ friendSearchMessage() }}</p> }
+                <!-- Se muestran resultados solo si hay coincidencias; track result.id ayuda a actualizar la lista. -->
                 @if (friendSearchResults().length > 0) {
                   <ul class="friend-list friend-search-results">
                     @for (result of friendSearchResults(); track result.id) {
+                      <!-- Cada resultado permite abrir el perfil o añadir esa persona como amistad. -->
                       <li class="friend-item">
                         @if (result.avatarUrl) {
                           <img class="friend-avatar" [src]="result.avatarUrl" [alt]="result.username" />
@@ -154,10 +190,12 @@
                     }
                   </ul>
                 }
+                <!-- Si no hay amistades se muestra un mensaje; si las hay, @for crea su lista. -->
                 @if (friends().length === 0) {
                   <p class="empty-friends">Todavía no tienes amigos añadidos.</p>
                 } @else {
                   <ul class="friend-list">
+                    <!-- track friend.id mantiene una identidad estable para cada amistad renderizada. -->
                     @for (friend of friends(); track friend.id) {
                       <li class="friend-item">
                         @if (friend.avatarUrl) {
@@ -171,7 +209,9 @@
                           </button>
                           <small>{{ friend.online ? 'Conectado' : 'Desconectado' }}</small>
                         </div>
+                        <!-- aria-label describe el estado con palabras, no solo mediante el color del punto. -->
                         <span class="status-dot" [class.online]="friend.online" aria-label="{{ friend.online ? 'Conectado' : 'Desconectado' }}"></span>
+                        <!-- El nombre accesible incluye a quién se va a eliminar, evitando botones ambiguos. -->
                         <button type="button" class="remove-friend-button" (click)="removeFriend(friend.id)"
                           [attr.aria-label]="'Eliminar a ' + friend.username">Eliminar</button>
                       </li>
@@ -183,8 +223,10 @@
           </section>
         }
         @case ('game') {
+          <!-- aria-label identifica el grupo de juego y chat; los componentes reciben datos y eventos por bindings. -->
           <section class="content-view game-view" aria-label="Partidas y chat">
             <div class="play-area">
+              <!-- queueEnabled activa la búsqueda de rival; matchSelected devuelve la partida elegida. -->
               <app-board [queueEnabled]="true" (matchSelected)="selectMatch($event)" />
               <app-chat />
             </div>
@@ -193,11 +235,13 @@
                 <div><p class="eyebrow">TUS MESAS</p><h2 id="active-games-title">Partidas</h2></div>
                 <span>{{ activeMatches().length }} abiertas</span>
               </header>
+              <!-- El contador se calcula desde la lista; @for repite el tablero para cada partida abierta. -->
               <div class="active-game-list">
                 @for (match of activeMatches(); track match.gameId) {
                   <article class="active-game">
                     <app-board [match]="match" (closeGame)="closeMatch($event)" />
                   </article>
+                <!-- @empty muestra contenido alternativo cuando la colección del @for no tiene partidas. -->
                 } @empty {
                   <p class="empty-games">Todavía no tienes partidas abiertas. Busca rival para empezar una.</p>
                 }
@@ -206,13 +250,16 @@
           </section>
         }
         @case ('profile') {
+          <!-- aria-labelledby vincula esta pantalla con el nombre del perfil mostrado. -->
           <section class="public-profile-view content-view" aria-labelledby="public-profile-title">
             <button type="button" class="text-button profile-back" (click)="closeProfile()">Volver</button>
+            <!-- Estas ramas muestran el estado de carga, un error o el perfil disponible, por orden. -->
             @if (profileLoading()) {
               <p role="status" aria-live="polite">Cargando perfil...</p>
             } @else if (profileError()) {
               <p class="error" role="alert">{{ profileError() }}</p>
             } @else if (publicProfile(); as profile) {
+              <!-- 'as profile' guarda el resultado para las expresiones de esta vista; se usa avatar o inicial. -->
               <article class="public-profile">
                 @if (profile.avatarUrl) {
                   <img class="public-profile-avatar" [src]="profile.avatarUrl" [alt]="'Avatar de ' + profile.username" />
@@ -233,11 +280,14 @@
           </section>
         }
         @case ('tournament') {
+          <!-- El componente emite playGame cuando se selecciona una partida del torneo. -->
           <section class="content-view"><app-tournaments (playGame)="selectMatch($event)" /></section>
         }
         @case ('settings') {
+          <!-- Settings requiere una cuenta disponible; currentUser queda como alias dentro de esta rama. -->
           @if (user(); as currentUser) {
             <section class="settings-view content-view" aria-labelledby="settings-title">
+              <!-- Se muestra la foto existente o, si falta, una inicial decorativa del jugador. -->
               <header class="settings-profile">
                 @if (currentUser.avatarUrl) {
                   <img class="profile-avatar" [src]="currentUser.avatarUrl" [alt]="currentUser.username" />
@@ -252,11 +302,13 @@
                 </div>
               </header>
 
+              <!-- El envío persiste los cambios desde Angular y evita la navegación por defecto del formulario. -->
               <form class="account-form" (submit)="$event.preventDefault(); saveAccountChanges()">
                 <div class="form-heading"><div><p class="eyebrow">PERFIL</p><h3>Datos de acceso</h3></div></div>
                 <label for="settings-username">Nombre de usuario</label>
                 <input id="settings-username" name="settingsUsername" [(ngModel)]="settingsUsername"
                   minlength="3" maxlength="32" required />
+                <!-- ngModel mantiene los campos sincronizados; required se calcula según los cambios solicitados. -->
                 <label for="settings-current-password">Contraseña actual <span>(necesaria para cambiar nombre o contraseña)</span></label>
                 <input id="settings-current-password" name="settingsCurrentPassword" type="password"
                   [(ngModel)]="settingsCurrentPassword" autocomplete="current-password" minlength="8"
@@ -264,23 +316,28 @@
                 <label for="settings-new-password">Nueva contraseña <span>(opcional)</span></label>
                 <input id="settings-new-password" name="settingsNewPassword" type="password"
                   [(ngModel)]="settingsNewPassword" autocomplete="new-password" minlength="8" maxlength="72" />
+                <!-- El selector solo acepta imágenes y change entrega el archivo al manejador del componente. -->
                 <label for="settings-avatar">Foto de perfil</label>
                 <input id="settings-avatar" type="file" accept="image/*" (change)="onAvatarSelected($event)" />
+                <!-- La vista previa se incluye solo cuando se ha seleccionado una URL de imagen. -->
                 @if (settingsAvatarUrl) {
                   <img class="settings-avatar-preview" [src]="settingsAvatarUrl" [alt]="'Previsualización de avatar'" />
                 }
                 <p class="form-hint">Puedes cambiar la foto sin modificar ni introducir tu contraseña.</p>
+                <!-- role=status anuncia confirmaciones sin interrumpir; role=alert prioriza errores. -->
                 @if (settingsMessage()) { <p class="success" role="status">{{ settingsMessage() }}</p> }
                 @if (settingsError()) { <p class="error" role="alert">{{ settingsError() }}</p> }
                 <button type="submit" class="primary-button">Guardar cambios</button>
               </form>
 
+              <!-- aria-labelledby da nombre a esta zona sensible y separada de los cambios normales. -->
               <section class="danger-zone" aria-labelledby="delete-account-title">
                 <div><p class="eyebrow">ZONA DE RIESGO</p><h3 id="delete-account-title">Eliminar cuenta</h3>
                   <p>Se borrarán tu avatar y amistades; el historial se conservará anonimizado. Termina las partidas activas antes de borrar.</p></div>
                 <label for="delete-account-password">Contraseña actual</label>
                 <input id="delete-account-password" name="deleteAccountPassword" type="password"
                   [(ngModel)]="deleteAccountPassword" autocomplete="current-password" minlength="8" />
+                <!-- disabled evita borrar sin contraseña; click ejecuta la eliminación de la cuenta. -->
                 <button type="button" class="danger-button" [disabled]="!deleteAccountPassword"
                   (click)="deleteAccount()">Borrar cuenta</button>
               </section>
@@ -288,6 +345,7 @@
           }
         }
       }
+      <!-- Accesos legales disponibles también dentro del espacio autenticado. -->
       <footer class="legal-links app-legal-links" aria-label="Información legal">
         <button type="button" data-legal="privacy" (click)="openLegal('privacy')">Política de privacidad</button>
         <button type="button" data-legal="terms" (click)="openLegal('terms')">Términos de servicio</button>

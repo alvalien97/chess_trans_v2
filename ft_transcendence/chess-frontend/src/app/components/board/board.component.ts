@@ -1,3 +1,4 @@
+// Herramientas de Angular para crear el componente, intercambiar datos y guardar estado reactivo.
 import {
   Component,
   ElementRef,
@@ -11,103 +12,141 @@ import {
   inject,
   signal
 } from '@angular/core';
+// HttpClient consulta el backend y HttpHeaders añade autenticación a la petición.
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+// Subscription permite cancelar consultas periódicas; interval crea esas consultas repetidas.
 import { Subscription, interval } from 'rxjs';
+// Operadores para lanzar una consulta inmediata, repetirla y detenerla según su resultado.
 import { startWith, switchMap, takeWhile } from 'rxjs/operators';
+// Servicios que gestionan el WebSocket de ajedrez y los datos de sesión.
 import { ChessWebsocketService } from '../../services/chess-websocket';
 import { AuthService } from '../../services/auth';
 
+// Datos que otro componente necesita para abrir una partida concreta.
 export interface MatchAssignment {
-  gameId: string;
-  color: number;
-  opponent: string;
+  gameId: string; // Identificador de la partida en el backend.
+  color: number; // Color asignado al jugador.
+  opponent: string; // Nombre visible del rival.
 }
 
+// Respuesta del backend al consultar la búsqueda de rival.
 interface MatchmakingStatus {
-  status: 'IDLE' | 'WAITING' | 'MATCHED';
-  gameId: string | null;
-  color: number | null;
-  opponent: string | null;
+  status: 'IDLE' | 'WAITING' | 'MATCHED'; // Estado de la búsqueda.
+  gameId: string | null; // Partida asignada cuando se encuentra rival.
+  color: number | null; // Color asignado en esa partida.
+  opponent: string | null; // Nombre del rival, si ya se encontró.
 }
 
+// Parte del estado de partida que la interfaz necesita para dibujar el tablero.
 interface SharedGameState {
-  pieces?: any[];
-  currentColor?: number;
-  status?: string;
-  drawOfferByUserId?: number | null;
-  winnerId?: number | null;
-  resultMessage?: string | null;
+  pieces?: any[]; // Piezas con sus posiciones recibidas del servidor.
+  currentColor?: number; // Color al que le toca mover.
+  status?: string; // Estado de la partida: en curso, jaque mate, tablas, etc.
+  drawOfferByUserId?: number | null; // Id de quien ha ofrecido tablas.
+  winnerId?: number | null; // Id del ganador, si ya se decidió.
+  resultMessage?: string | null; // Texto opcional con el resultado.
 }
 
 @Component({
+  // Etiqueta con la que se inserta este tablero en otra plantilla Angular.
   selector: 'app-board',
+  // Plantilla y estilos propios del tablero.
   templateUrl: './board.component.html',
   styleUrls: ['./board.component.css']
 })
 export class BoardComponent implements OnInit, OnDestroy {
+  // Servicios necesarios para intercambiar datos, conectar el juego y consultar la sesión.
   private chessWsService = inject(ChessWebsocketService);
   private http = inject(HttpClient);
   private auth = inject(AuthService);
+  // Suscripción a la búsqueda periódica de rival; se cancela al terminar.
   private polling?: Subscription;
+  // Referencia a todos los botones de casilla para mover el foco con el teclado.
   @ViewChildren('squareButton', { read: ElementRef })
   private squareButtons!: QueryList<ElementRef<HTMLButtonElement>>;
 
+  // Estado reactivo que la plantilla usa para mostrar partida y emparejamiento.
   gameId = signal<string | null>(null);
   queueState = signal<'IDLE' | 'WAITING' | 'MATCHED' | 'FINISHED'>('IDLE');
   playerColor = signal<number | null>(null);
   opponent = signal('');
   pieces = signal<any[]>(this.createInitialPieces());
   
+  // Crea la posición inicial de ajedrez para mostrar el tablero antes de recibir datos.
   private createInitialPieces() {
+    // Aquí se reunirán las 32 piezas con su color, columna, fila y tipo.
     const pieces: any[] = [];
+    // Orden habitual de las piezas de la primera fila de cada lado.
     const backRank = ['ROOK', 'KNIGHT', 'BISHOP', 'QUEEN', 'KING', 'BISHOP', 'KNIGHT', 'ROOK'];
     
+    // Recorre las ocho columnas y coloca una pieza mayor y un peón por columna.
     for (let col = 0; col < 8; col++) {
+      // Coloca las piezas negras en las dos filas superiores.
       pieces.push({ color: 1, col, row: 0, type: backRank[col] });
       pieces.push({ color: 1, col, row: 1, type: 'PAWN' });
+      // Coloca los peones y las piezas blancas en las dos filas inferiores.
       pieces.push({ color: 0, col, row: 6, type: 'PAWN' });
       pieces.push({ color: 0, col, row: 7, type: backRank[col] });
     }
     
+    // Devuelve todas las piezas para inicializar el signal del tablero.
     return pieces;
   }
+  // Pieza seleccionada al pulsar una casilla.
   selectedPiece = signal<any>(null);
+  // Color que debe realizar el siguiente movimiento.
   currentColor = signal(0);
+  // Texto de error que se presenta al jugador.
   errorMessage = signal('');
+  // Estado textual de la partida, como jaque o tablas.
   gameStatus = signal('');
+  // Identificador de quien ha enviado una oferta de tablas, o null si no hay oferta.
   drawOfferByUserId = signal<number | null>(null);
+  // Mensaje final que se muestra al terminar la partida.
   resultMessage = signal('');
+  // Identificador de la persona conectada, usado para reconocer resultados propios.
   readonly currentUserId = this.auth.user()?.id ?? null;
+  // Casilla que tiene el foco del teclado en este momento.
   focusedSquare = signal({ col: 0, row: 0 });
 
+  // Eventos que este componente envía al componente que contiene el tablero.
   @Output() matchSelected = new EventEmitter<MatchAssignment>();
   @Output() closeGame = new EventEmitter<string>();
 
+  // Activa el modo de búsqueda delegada, donde el componente padre abrirá la partida.
   @Input() queueEnabled = false;
 
+  // Recibe una partida desde el componente padre y la activa si es una nueva.
   @Input() set match(assignment: MatchAssignment | null) {
     if (assignment && assignment.gameId !== this.gameId()) {
       this.activateMatch(assignment);
     }
   }
 
+  // Números de fila y columna que la plantilla recorre para dibujar las 64 casillas.
   boardRows = [0, 1, 2, 3, 4, 5, 6, 7];
   boardCols = [0, 1, 2, 3, 4, 5, 6, 7];
 
+  // Angular llama este método al mostrar el tablero.
   ngOnInit(): void {
     this.gameStatus.set('');
   }
 
+  // Solicita entrar en la cola de matchmaking para buscar un rival.
   findOpponent() {
+    // Sin token no se puede hacer una búsqueda asociada a una cuenta.
     const headers = this.authHeaders();
     if (!headers) {
       this.errorMessage.set('Inicia sesión para buscar una partida.');
       return;
     }
+    // Limpia errores anteriores y envía la solicitud de búsqueda.
     this.errorMessage.set('');
     this.http.post<MatchmakingStatus>('/api/matchmaking/queue', {}, { headers }).subscribe({
       next: (status) => {
+        // Actualiza la pantalla con el estado que devolvió el backend.
         this.handleMatchmakingStatus(status);
+        // Si todavía no hay rival, consulta periódicamente hasta encontrarlo.
         if (status.status === 'WAITING') {
           this.pollForMatch(headers);
         }
@@ -116,6 +155,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Avisa al componente padre que puede quitar de pantalla una partida terminada.
   closeFinishedGame() {
     const gameId = this.gameId();
     if (gameId && this.queueState() === 'FINISHED') {
@@ -123,6 +163,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Confirma la rendición y la envía al backend por el canal en tiempo real.
   resign() {
     const gameId = this.gameId();
     if (!gameId || !window.confirm('¿Rendirte? Tu rival ganará esta partida.')) return;
@@ -131,6 +172,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Envía al rival una oferta de tablas.
   offerDraw() {
     const gameId = this.gameId();
     if (gameId && !this.chessWsService.offerDraw(gameId)) {
@@ -138,6 +180,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Responde a la oferta de tablas con aceptación o rechazo.
   respondToDraw(accepted: boolean) {
     const gameId = this.gameId();
     if (gameId && !this.chessWsService.respondToDraw(gameId, accepted)) {
@@ -145,6 +188,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Detiene la consulta de rival y solicita salir de la cola al backend.
   cancelSearch() {
     this.polling?.unsubscribe();
     this.queueState.set('IDLE');
@@ -154,25 +198,32 @@ export class BoardComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Gestiona la selección de casillas y envía un movimiento cuando corresponde.
   onSquareClick(col: number, row: number) {
+    // Mantiene actualizado el foco para que el teclado siga al ratón.
     this.focusedSquare.set({ col, row });
+    // Solo se puede mover durante una partida y cuando es el turno del jugador.
     if (this.queueState() !== 'MATCHED' || this.currentColor() !== this.playerColor()) {
       return;
     }
 
+    // Averigua qué pieza ocupa la casilla pulsada y qué pieza estaba seleccionada.
     const clickedPiece = this.getPieceAt(col, row);
     const selected = this.selectedPiece();
 
     if (clickedPiece?.color === this.playerColor()) {
+      // Pulsar una pieza propia la selecciona como origen del siguiente movimiento.
       this.selectedPiece.set(clickedPiece);
       return;
     }
 
     if (selected) {
+      // Si ya había una pieza seleccionada, la casilla pulsada se convierte en destino.
       const gameId = this.gameId();
       if (!gameId) {
         return;
       }
+      // Envía origen y destino al backend; el backend valida las reglas del ajedrez.
       const sent = this.chessWsService.sendMove(gameId, {
         fromCol: selected.col,
         fromRow: selected.row,
@@ -180,48 +231,63 @@ export class BoardComponent implements OnInit, OnDestroy {
         toRow: row
       });
       if (!sent) {
+        // Informa si no se pudo enviar el movimiento por falta de conexión.
         this.errorMessage.set('Sin conexión con la partida. El movimiento no se envió; inténtalo de nuevo.');
       }
     } else if (clickedPiece) {
+      // Permite seleccionar una pieza si todavía no había origen seleccionado.
       this.selectedPiece.set(clickedPiece);
     }
   }
 
+  // Busca la pieza situada en la columna y fila recibidas.
   getPieceAt(col: number, row: number) {
     return this.pieces().find(p => p.col === col && p.row === row);
   }
 
+  // Convierte el tipo y color interno de una pieza en su símbolo de ajedrez.
   getPieceSymbol(piece: any): string {
+    // Símbolos Unicode para las piezas blancas.
     const white: Record<string, string> = {
       KING: '♔', QUEEN: '♕', ROOK: '♖', BISHOP: '♗', KNIGHT: '♘', PAWN: '♙'
     };
+    // Símbolos Unicode para las piezas negras.
     const black: Record<string, string> = {
       KING: '♚', QUEEN: '♛', ROOK: '♜', BISHOP: '♝', KNIGHT: '♞', PAWN: '♟'
     };
+    // Elige la tabla correcta según el código de color del modelo.
     const table = piece.color === 0 ? white : black;
+    // Devuelve el símbolo correspondiente o ? si llega un tipo desconocido.
     return table[piece.type] ?? '?';
   }
 
+  // En un tablero de ajedrez los colores de las casillas alternan según fila + columna.
   isLightSquare(col: number, row: number): boolean {
     return (col + row) % 2 === 0;
   }
 
+  // Crea una descripción accesible que un lector de pantalla puede anunciar.
   getSquareLabel(col: number, row: number): string {
+    // Convierte la columna 0-7 a letra a-h y la fila 0-7 a número 8-1.
     const coordinate = `${String.fromCharCode(97 + col)}${8 - row}`;
     const piece = this.getPieceAt(col, row);
     if (!piece) {
       return `${coordinate}, vacía`;
     }
 
+    // Traduce los códigos internos de pieza a nombres comprensibles.
     const pieceNames: Record<string, string> = {
       KING: 'rey', QUEEN: 'reina', ROOK: 'torre', BISHOP: 'alfil', KNIGHT: 'caballo', PAWN: 'peón'
     };
+    // Prepara el color y comprueba si esta es la pieza seleccionada.
     const color = piece.color === 0 ? 'blancas' : 'negras';
     const selected = this.selectedPiece()?.col === col && this.selectedPiece()?.row === row;
     return `${coordinate}, ${pieceNames[piece.type] ?? 'pieza'} ${color}${selected ? ', seleccionada' : ''}`;
   }
 
+  // Permite recorrer el tablero con las teclas de flecha.
   onSquareKeydown(event: KeyboardEvent, col: number, row: number) {
+    // Calcula la casilla vecina indicada por la tecla pulsada.
     const target = {
       ArrowUp: { col, row: row - 1 },
       ArrowDown: { col, row: row + 1 },
@@ -229,30 +295,38 @@ export class BoardComponent implements OnInit, OnDestroy {
       ArrowRight: { col: col + 1, row }
     }[event.key];
 
+    // Ignora otras teclas y movimientos que saldrían del tablero.
     if (!target || target.col < 0 || target.col > 7 || target.row < 0 || target.row > 7) {
       return;
     }
 
+    // Evita el desplazamiento de la página y mueve el foco al botón de la casilla vecina.
     event.preventDefault();
     this.focusedSquare.set(target);
     this.squareButtons.get(target.row * 8 + target.col)?.nativeElement.focus();
   }
 
+  // Angular llama este método al retirar el tablero de la pantalla.
   ngOnDestroy(): void {
+    // Detiene el sondeo para evitar peticiones cuando la pantalla ya no existe.
     this.polling?.unsubscribe();
+    // Si seguía buscando rival, intenta sacarlo de la cola del backend.
     if (this.queueState() === 'WAITING') {
       const headers = this.authHeaders();
       if (headers) {
         this.http.delete('/api/matchmaking/queue', { headers }).subscribe();
       }
     }
+    // Si había una partida activa, deja de escuchar sus actualizaciones.
     const gameId = this.gameId();
     if (gameId) {
       this.chessWsService.leaveGame(gameId);
     }
   }
 
+  // Copia el estado recibido del backend a los signals que utiliza la plantilla.
   private applyState(gameState: SharedGameState) {
+    // Actualiza las piezas, el turno y el estado, usando valores seguros si falta algún campo.
     this.pieces.set(gameState.pieces ?? []);
     this.currentColor.set(gameState.currentColor ?? 0);
     this.gameStatus.set(gameState.status ?? 'PLAYING');
@@ -260,6 +334,7 @@ export class BoardComponent implements OnInit, OnDestroy {
       ? 'FINISHED'
       : 'MATCHED');
     this.drawOfferByUserId.set(gameState.drawOfferByUserId ?? null);
+    // Construye un texto de resultado sencillo para jaque mate y rendición.
     if (gameState.winnerId && gameState.status === 'CHECKMATE') {
       this.resultMessage.set(gameState.winnerId === this.currentUserId
         ? 'Jaque mate. Has ganado.'
@@ -269,32 +344,43 @@ export class BoardComponent implements OnInit, OnDestroy {
         ? 'Tu rival se ha rendido. Has ganado.'
         : 'Te has rendido. Ha ganado tu rival.');
     } else {
+      // Para otros finales utiliza el mensaje que haya preparado el backend.
       this.resultMessage.set(gameState.resultMessage ?? '');
     }
+    // Una actualización nueva elimina el error y la selección anterior.
     this.errorMessage.set('');
     this.selectedPiece.set(null);
     const focused = this.focusedSquare();
+    // Si la casilla enfocada ya no contiene pieza, vuelve a una casilla inicial válida.
     if (!this.getPieceAt(focused.col, focused.row)) {
       this.focusedSquare.set({ col: 4, row: 6 });
     }
   }
 
+  // Consulta cada 1,5 segundos si el servidor ya encontró un rival.
   private pollForMatch(headers: HttpHeaders) {
+    // Sustituye una consulta anterior para que nunca haya dos sondeos activos.
     this.polling?.unsubscribe();
     this.polling = interval(1500).pipe(
+      // Ejecuta la primera consulta inmediatamente, sin esperar al primer intervalo.
       startWith(0),
+      // Cada intervalo realiza una petición HTTP del estado actual.
       switchMap(() => this.http.get<MatchmakingStatus>('/api/matchmaking/status', { headers })),
+      // Sigue consultando mientras espera; incluye la primera respuesta que ya no sea WAITING.
       takeWhile((status) => status.status === 'WAITING', true)
     ).subscribe({
       next: (status) => this.handleMatchmakingStatus(status),
       error: (error) => {
+        // Si falla la comunicación, vuelve a permitir iniciar otra búsqueda.
         this.queueState.set('IDLE');
         this.errorMessage.set(error.error?.detail ?? 'Se perdió la conexión con el emparejamiento.');
       }
     });
   }
 
+  // Decide si el resultado inicia una partida aquí o se comunica al componente padre.
   private handleMatchmakingStatus(status: MatchmakingStatus) {
+    // En modo cola, el componente padre selecciona la partida cuando aparece un rival.
     if (this.queueEnabled && status.status === 'MATCHED' && status.gameId && status.color !== null) {
       this.polling?.unsubscribe();
       this.queueState.set('IDLE');
@@ -305,41 +391,51 @@ export class BoardComponent implements OnInit, OnDestroy {
       });
       return;
     }
+    // Muestra el estado recibido; si ya hay rival, activa el tablero con sus datos.
     this.queueState.set(status.status);
     if (status.status === 'MATCHED' && status.gameId && status.color !== null) {
       this.activateMatch({ gameId: status.gameId, color: status.color, opponent: status.opponent ?? 'Rival' });
     }
   }
 
+  // Prepara el tablero y abre las conexiones de la partida asignada.
   private activateMatch(assignment: MatchAssignment) {
+    // Ya no hace falta seguir consultando por un rival.
     this.polling?.unsubscribe();
+    // En modo cola entrega la partida al padre en vez de abrirla directamente.
     if (this.queueEnabled) {
       this.queueState.set('IDLE');
       this.matchSelected.emit(assignment);
       return;
     }
+    // Guarda los datos necesarios para mostrar la partida y el lado del jugador.
     this.gameId.set(assignment.gameId);
     this.playerColor.set(assignment.color);
     this.opponent.set(assignment.opponent);
     this.queueState.set('MATCHED');
     this.selectedPiece.set(null);
+    // Sin token no se pueden consultar los datos privados de la partida.
     const headers = this.authHeaders();
     if (!headers) {
       this.errorMessage.set('La sesión ha caducado. Inicia sesión de nuevo.');
       return;
     }
+    // Obtiene el estado inicial del tablero mediante HTTP.
     this.http.get<any>(`/api/games/${assignment.gameId}`, { headers }).subscribe({
       next: (gameState) => this.applyState(gameState),
       error: (error) => this.errorMessage.set(error.error?.detail ?? 'No se pudo cargar la partida.')
     });
+    // Luego escucha cambios en tiempo real para sincronizar ambos jugadores.
     this.chessWsService.joinGame(
       assignment.gameId,
       (gameState) => this.applyState(gameState),
       (message) => this.errorMessage.set(message)
     );
+    // Informa al componente padre de qué partida se activó.
     this.matchSelected.emit(assignment);
   }
 
+  // Crea una cabecera Authorization a partir del token de sesión, si existe.
   private authHeaders(): HttpHeaders | null {
     const authorization = this.auth.authorizationHeader;
     return authorization ? new HttpHeaders({ Authorization: authorization }) : null;

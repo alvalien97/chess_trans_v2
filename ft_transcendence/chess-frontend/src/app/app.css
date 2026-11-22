@@ -1,3 +1,4 @@
+/* Variables de color compartidas por la aplicación; display y min-height hacen que el elemento raíz ocupe la pantalla. */
 app-root {
   --ink: #1d2924;
   --muted: #68736b;
@@ -11,44 +12,56 @@ app-root {
   color: var(--ink);
 }
 
+/* El enlace queda fuera de pantalla hasta recibir foco para no estorbar visualmente y seguir accesible por teclado. */
 .skip-link { position: absolute; top: 8px; left: -10000px; z-index: 10; padding: 10px 14px; background: var(--lime); color: var(--ink); }
 .skip-link:focus { left: 8px; }
+/* Los enlaces legales se distribuyen en filas flexibles; los botones conservan una zona táctil y aspecto de enlace. */
 .legal-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 18px; }
 .legal-links button { min-height: 40px; padding: 6px 4px; border: 0; background: transparent; color: #355f43; text-decoration: underline; cursor: pointer; font: inherit; font-size: .82rem; }
 .auth-screen > .legal-links { grid-column: 1 / -1; }
 .app-legal-links { justify-content: flex-start; margin-top: 42px; padding-top: 16px; border-top: 1px solid var(--line); }
+/* La cuadrícula divide navegación y contenido; la barra lateral ocupa toda la altura y apila sus elementos. */
 .app-shell { display: grid; grid-template-columns: 250px minmax(0, 1fr); min-height: 100vh; background: var(--paper); }
 .sidebar { display: flex; flex-direction: column; min-height: 100vh; padding: 28px 18px 18px; background: var(--forest); color: #f5f7f1; }
+/* La marca y el símbolo se alinean en una fila; el bloque de marca usa una celda cuadrada con color de contraste. */
 .brand { display: flex; align-items: center; gap: 12px; padding: 2px 10px 34px; color: inherit; text-decoration: none; }
 .brand-mark { display: grid; width: 42px; aspect-ratio: 1; place-items: center; background: var(--lime); color: var(--forest); font: 2rem Georgia, serif; }
 .brand-name { font-weight: 700; }
 .brand-name small, .user-details small { display: block; margin-top: 4px; color: #a9b9ad; font-size: .62rem; font-weight: 600; }
+/* Los rótulos usan tipografía pequeña; la navegación en grid separa opciones uniformemente. */
 .nav-caption, .eyebrow { margin: 0; color: var(--muted); font-size: .68rem; font-weight: 700; }
 .nav-caption { padding: 0 10px 12px; color: #a9b9ad; }
 .primary-nav { display: grid; gap: 5px; }
+/* Cada opción alinea número y texto; la opción activa contrasta y su marcador se posiciona al borde. */
 .nav-item { position: relative; display: flex; align-items: center; gap: 14px; min-height: 48px; padding: 0 12px; border: 0; background: transparent; color: #d0d9d1; text-align: left; cursor: pointer; font: inherit; }
 .nav-item.active { background: #294b3b; color: white; }
 .nav-number { color: #94aa9b; font-size: .68rem; font-variant-numeric: tabular-nums; }
 .nav-marker { position: absolute; right: 0; width: 3px; height: 22px; background: var(--lime); }
+/* auto mantiene el pie de la barra abajo; el usuario aparece como botón horizontal y la salida conserva su estilo discreto. */
 .sidebar-footer { display: grid; gap: 10px; margin-top: auto; padding-top: 22px; border-top: 1px solid #385747; }
 .user-chip { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; font: inherit; }
 .user-avatar, .profile-avatar { display: grid; flex: 0 0 auto; place-items: center; border-radius: 50%; background: var(--coral); color: white; font-weight: 700; }
 .user-avatar { width: 36px; height: 36px; }
+/* object-fit recorta la imagen sin deformarla; overflow oculta sus bordes fuera del círculo. */
 .user-avatar-image, .profile-avatar, .friend-avatar, .settings-avatar-preview {
   object-fit: cover;
   border-radius: 50%;
   overflow: hidden;
 }
 .user-avatar-image { width: 36px; height: 36px; }
+/* El texto largo del usuario se recorta con puntos; workspace limita el ancho y centra su contenido con padding adaptable. */
 .user-details { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .logout-button { min-height: 42px; padding: 8px; border: 0; background: transparent; color: #c6d2c8; text-align: left; cursor: pointer; font: inherit; }
 .workspace { min-width: 0; max-width: 1500px; width: 100%; margin: 0 auto; padding: 32px clamp(22px, 5vw, 72px) 56px; }
+/* La cabecera distribuye título y estado en extremos opuestos y añade una línea separadora. */
 .workspace-header { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
 .workspace-header .eyebrow span { margin: 0 7px; color: #a0aaa1; }
 .workspace-header h1 { margin: 7px 0 0; font: 600 1.45rem Georgia, serif; }
 .online-status { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: .82rem; }
 .online-status span { width: 8px; height: 8px; border-radius: 50%; background: #73a86d; }
+/* El inicio tiene separación superior y una animación de entrada breve. */
 .home-view { padding-top: 28px; animation: arrive .35s ease-out both; }
+/* El bloque de bienvenida posiciona texto e ilustración en una misma banda y recorta el contenido decorativo. */
 .welcome-band { position: relative; display: flex; min-height: 310px; align-items: center; overflow: hidden; padding: clamp(26px, 5vw, 58px); background: #e6ecdf; }
 .welcome-copy { position: relative; z-index: 1; }
 .welcome-copy h2 { margin: 13px 0 8px; font: 500 clamp(2rem, 4vw, 3.2rem)/1.13 Georgia, serif; }
@@ -57,6 +70,7 @@ app-root {
 .primary-button { display: inline-flex; align-items: center; justify-content: center; gap: 18px; min-height: 48px; padding: 11px 16px; border: 0; background: var(--forest); color: white; cursor: pointer; font: inherit; font-weight: 650; }
 .hero-action { margin-top: 23px; }
 .hero-action span { color: var(--lime); }
+/* La ilustración del tablero se crea con gradientes y se centra verticalmente detrás del texto. */
 .hero-board { position: absolute; top: 50%; right: 11%; width: min(32%, 250px); aspect-ratio: 1; transform: translateY(-50%) rotate(8deg); background: conic-gradient(#18372b 25%, transparent 0 50%, #18372b 0 75%, transparent 0) 0 0 / 50% 50%, #d7f36a; }
 .hero-knight { position: absolute; inset: 0; display: grid; place-items: center; color: #e45c43; font: 9rem Georgia, serif; text-shadow: 3px 5px 0 #18372b; }
 .board-file { position: absolute; right: 9px; bottom: 5px; color: #18372b; font-size: .58rem; font-weight: 700; }
@@ -65,6 +79,7 @@ app-root {
 .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .section-heading h2 { margin: 5px 0 0; font: 500 1.55rem Georgia, serif; }
 .section-heading > span { color: var(--muted); font-size: .75rem; }
+/* El panel separa las amistades del fondo; el formulario alinea etiqueta, campo y botón. */
 .friends-panel { padding: 18px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.5); }
 .friend-form { display: flex; gap: 10px; margin-bottom: 14px; }
 .friend-form label { align-self: center; font-size: .85rem; font-weight: 650; }
@@ -74,6 +89,7 @@ app-root {
 .search-message { margin: 0 0 12px; color: var(--muted); }
 .add-friend-button { min-height: 36px; padding: 7px 12px; border: 1px solid var(--line); background: white; color: var(--ink); font: inherit; cursor: pointer; }
 .remove-friend-button { min-height: 36px; padding: 7px 12px; border: 1px solid var(--line); background: white; color: #9a3f35; font: inherit; cursor: pointer; }
+/* La lista elimina viñetas y usa tarjetas flexibles; las imágenes conservan el encuadre circular. */
 .friend-list { list-style: none; display: grid; gap: 10px; margin: 0; padding: 0; }
 .friend-item { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); background: white; }
 .friend-avatar { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
@@ -86,6 +102,7 @@ app-root {
 .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #b6b8b6; }
 .status-dot.online { background: #50a65d; }
 .empty-friends { margin: 0; color: var(--muted); }
+/* Las opciones rápidas forman dos columnas con icono, texto y flecha; la segunda añade un separador vertical. */
 .quick-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--line); }
 .quick-action { display: grid; grid-template-columns: 34px 42px minmax(0, 1fr) 20px; align-items: center; gap: 12px; min-height: 100px; padding: 16px 14px; border: 0; border-bottom: 1px solid var(--line); background: transparent; color: var(--ink); text-align: left; cursor: pointer; font: inherit; }
 .quick-action + .quick-action { border-left: 1px solid var(--line); }
@@ -97,6 +114,7 @@ app-root {
 .action-copy small { margin-top: 5px; color: var(--muted); }
 .action-arrow { color: #54715c; }
 .quick-action:hover .action-arrow { transform: translate(2px, -2px); }
+/* Las vistas internas comparten entrada animada; la zona de juego reparte tablero y chat con columnas adaptables. */
 .content-view { padding-top: 26px; animation: arrive .3s ease-out both; }
 .play-area { display: grid; grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: clamp(16px, 3vw, 32px); align-items: start; }
 app-board, app-chat, app-tournaments { display: block; min-width: 0; }
@@ -105,6 +123,7 @@ app-board, app-chat, app-tournaments { display: block; min-width: 0; }
 .active-game { min-width: 0; padding: 14px; border-top: 3px solid var(--forest); background: white; }
 .active-game .chess-board { width: min(100%, 500px, 60dvh); }
 .empty-games { grid-column: 1 / -1; margin: 0; padding: 20px 0; border-top: 1px solid var(--line); color: var(--muted); }
+/* Los perfiles y ajustes limitan su ancho y se centran para mejorar lectura en pantallas amplias. */
 .settings-view { width: min(100%, 760px); margin-inline: auto; }
 .public-profile-view { width: min(100%, 720px); margin-inline: auto; }
 .profile-back { margin: 0 0 20px; }
@@ -114,6 +133,7 @@ app-board, app-chat, app-tournaments { display: block; min-width: 0; }
 .public-profile h2 { margin: 8px 0; font: 500 2rem Georgia, serif; overflow-wrap: anywhere; }
 .profile-presence { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
 .profile-joined { margin: 0; color: var(--muted); }
+/* La cabecera del perfil alinea avatar y datos; el formulario de cuenta usa una columna con espaciado constante. */
 .settings-profile { display: flex; align-items: center; gap: 18px; padding: 24px 0; border-bottom: 1px solid var(--line); }
 .settings-profile .profile-avatar { width: 64px; height: 64px; margin: 0; }
 .settings-profile h2 { margin: 4px 0; font: 500 1.65rem Georgia, serif; }
@@ -128,11 +148,13 @@ app-board, app-chat, app-tournaments { display: block; min-width: 0; }
 .form-hint { margin: 0; color: var(--muted); font-size: .82rem; }
 .account-form .primary-button { justify-self: start; margin-top: 8px; }
 .success { margin: 0; color: #2f7147; }
+/* La zona de borrado queda separada por color y borde de advertencia; el botón expresa la acción destructiva. */
 .danger-zone { display: grid; gap: 10px; padding: 24px; border: 1px solid #e7c5bb; background: #fff9f7; }
 .danger-zone h3 { color: #963f30; }
 .danger-zone > div > p:last-child { margin: 0; color: var(--muted); }
 .danger-button { justify-self: start; min-height: 44px; padding: 9px 14px; border: 1px solid #a33e2f; background: #a33e2f; color: white; cursor: pointer; font: inherit; font-weight: 650; }
 .profile-avatar { width: 72px; height: 72px; margin-bottom: 18px; font-size: 1.7rem; }
+/* La pantalla de acceso usa dos columnas centradas; en el formulario se apilan los campos y se resalta el borde superior. */
 .auth-screen { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 440px); gap: clamp(32px, 9vw, 150px); align-items: center; min-height: 100vh; padding: clamp(28px, 9vw, 130px); background: var(--paper); }
 .auth-intro { position: relative; min-height: 360px; padding-top: 20px; }
 .auth-intro .brand-mark { margin-bottom: 34px; }
@@ -145,10 +167,13 @@ app-board, app-chat, app-tournaments { display: block; min-width: 0; }
 .auth-card .primary-button { margin-top: 8px; }
 .text-button { min-height: 42px; border: 0; background: transparent; color: #42674c; text-decoration: underline; cursor: pointer; font: inherit; }
 .error { margin: 0; color: #a73328; }
+/* El contorno de foco visible ayuda a ubicar controles con teclado; los deshabilitados muestran el cursor correspondiente. */
 button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible { outline: 3px solid #18372b; outline-offset: 3px; }
 button:disabled { cursor: not-allowed; }
+/* Entrada del contenido: aparece gradualmente y se desplaza unos píxeles hacia su posición final. */
 @keyframes arrive { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
 
+/* En tablet, la barra y el espacio se estrechan; tablero y chat pasan a una columna. */
 @media (max-width: 900px) {
   .app-shell { grid-template-columns: 190px minmax(0, 1fr); }
   .sidebar { padding-inline: 12px; }
@@ -158,6 +183,7 @@ button:disabled { cursor: not-allowed; }
   .active-game-list { grid-template-columns: minmax(0, 1fr); }
   app-chat { width: min(100%, 600px); margin: 0 auto; }
 }
+/* En móvil, la navegación se convierte en una barra superior y cada formulario/vista ajusta sus columnas y espacios. */
 @media (max-width: 640px) {
   .app-shell { display: flex; flex-direction: column; }
   .sidebar { min-height: 0; padding: 10px 12px 0; }
@@ -202,6 +228,7 @@ button:disabled { cursor: not-allowed; }
   .public-profile { padding-inline: 14px; }
 }
 
+/* Respeta la preferencia del sistema para reducir movimiento y evita transiciones prolongadas. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     scroll-behavior: auto !important;

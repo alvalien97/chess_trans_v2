@@ -1,11 +1,14 @@
+/* Carga los estilos principales definidos para la aplicación Angular. */
 @import './app/app.css';
 
+/* Incluye padding y bordes dentro del tamaño declarado de todos los elementos y sus pseudo-elementos. */
 *,
 *::before,
 *::after {
   box-sizing: border-box;
 }
 
+/* Elimina el margen del navegador, ocupa al menos la altura de la ventana y define la tipografía general. */
 html,
 body {
   margin: 0;

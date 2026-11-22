@@ -1,12 +1,17 @@
+<!-- Sección de chat con un nombre asociado a su encabezado para navegación accesible. -->
 <section class="chat" aria-labelledby="chat-title">
   <h2 id="chat-title">Chat</h2>
+  <!-- role=log anuncia mensajes añadidos; aria-live regula el aviso y aria-relevant delimita los cambios relevantes. -->
   <div class="messages" role="log" aria-live="polite" aria-relevant="additions text" aria-atomic="false">
+    <!-- @for recorre los mensajes; $index se usa como identidad de cada posición visible. -->
     @for (message of messages(); track $index) {
       <p><strong>{{ message.sender }}:</strong> {{ message.content }}</p>
     }
   </div>
+  <!-- El envío se gestiona en Angular para no recargar la página. -->
   <form class="message-form" (submit)="$event.preventDefault(); sendMessage()">
     <label for="chat-message">Mensaje</label>
+    <!-- id y for enlazan la etiqueta con el campo; ngModel sincroniza el texto y required/maxlength validan la entrada. -->
     <input
       id="chat-message"
       name="message"

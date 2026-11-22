@@ -1,61 +1,61 @@
+// Motor de Angular que procesa peticiones y crea el HTML inicial en el servidor.
 import {
   AngularNodeAppEngine,
   createNodeRequestHandler,
   isMainModule,
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
+// Express recibe las peticiones HTTP que llegan a este servidor de renderizado.
 import express from 'express';
+// join construye rutas de archivos válidas en el sistema operativo actual.
 import { join } from 'node:path';
 
+// Carpeta donde se compilaron los archivos que el navegador descarga.
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
+// Crea el servidor web de Express.
 const app = express();
+// Adaptador que ejecuta Angular para generar una respuesta HTML desde el servidor.
 const angularApp = new AngularNodeAppEngine();
 
-/**
- * Example Express Rest API endpoints can be defined here.
- * Uncomment and define endpoints as necessary.
- */
+// Los endpoints propios de Express podrían definirse aquí; la API de la aplicación
+// está en el backend Spring y no en este servidor de renderizado.
 
-/**
- * Serve static files from /browser
- */
+// Entrega directamente imágenes, estilos y otros archivos estáticos compilados.
 app.use(
   express.static(browserDistFolder, {
-    maxAge: '1y',
-    index: false,
-    redirect: false,
+    maxAge: '1y', // Permite al navegador conservar estos archivos durante un año.
+    index: false, // Deja que Angular gestione la página principal.
+    redirect: false, // No redirige automáticamente si la ruta apunta a una carpeta.
   }),
 );
 
-/**
- * Handle all other requests by rendering the Angular application.
- */
+// Para el resto de rutas, Angular prepara el HTML inicial que recibirá el navegador.
 app.use((req, res, next) => {
   angularApp
     .handle(req)
     .then((response) =>
+      // Si Angular generó una respuesta, se la devuelve al navegador; si no, sigue Express.
       response ? writeResponseToNodeResponse(response, res) : next(),
     )
+    // Pasa los errores al manejador de errores de Express.
     .catch(next);
 });
 
-/**
- * Start the server if this module is the main entry point, or it is ran via PM2.
- * The server listens on the port defined by the `PORT` environment variable, or defaults to 4000.
- */
+// Arranca el servidor cuando este archivo es el punto de entrada o está gestionado por PM2.
 if (isMainModule(import.meta.url) || process.env['pm_id']) {
+  // Usa el puerto de entorno PORT o el 4000 por defecto.
   const port = process.env['PORT'] || 4000;
   app.listen(port, (error) => {
     if (error) {
+      // Un error al abrir el puerto impide arrancar el servidor.
       throw error;
     }
 
+    // Indica en consola la dirección donde está escuchando.
     console.log(`Node Express server listening on http://localhost:${port}`);
   });
 }
 
-/**
- * Request handler used by the Angular CLI (for dev-server and during build) or Firebase Cloud Functions.
- */
+// Permite que Angular CLI u otra plataforma reutilice Express como manejador de peticiones.
 export const reqHandler = createNodeRequestHandler(app);

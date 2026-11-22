@@ -1,9 +1,12 @@
+<!-- aria-labelledby relaciona el área de torneos con su título para lectores de pantalla. -->
 <section class="tournaments" aria-labelledby="tournaments-title">
   <header class="tournaments-header">
     <h2 id="tournaments-title">Torneos</h2>
+    <!-- La interpolación calcula el número de torneos a partir de la lista actual. -->
     <span>{{ tournaments().length }} activos</span>
   </header>
 
+  <!-- submit cancela la navegación normal y llama a la creación desde Angular; ngModel enlaza cada campo. -->
   <form class="create-form" (submit)="$event.preventDefault(); createTournament()">
     <label>
       Nombre
@@ -11,6 +14,7 @@
     </label>
     <label>
       Jugadores
+      <!-- ngValue conserva estos valores numéricos al elegir la cantidad de jugadores. -->
       <select name="maxPlayers" [(ngModel)]="maxPlayers">
         <option [ngValue]="2">2</option>
         <option [ngValue]="4">4</option>
@@ -20,16 +24,20 @@
     <button type="submit">Crear torneo</button>
   </form>
 
+  <!-- Los mensajes de error aparecen cuando existen y role=alert prioriza su anuncio. -->
   @if (errorMessage()) {
     <p class="error" role="alert">{{ errorMessage() }}</p>
   }
 
+  <!-- El estado vacío solo se muestra si todavía no hay torneos. -->
   @if (tournaments().length === 0) {
     <p class="empty">Todavía no hay torneos.</p>
   }
 
+  <!-- @for crea una tarjeta por torneo; track tournament.id permite a Angular identificarla entre actualizaciones. -->
   <div class="tournament-list">
     @for (tournament of tournaments(); track tournament.id) {
+      <!-- Cada artículo contiene resumen, acciones y partidos de un torneo. -->
       <article class="tournament">
         <div class="tournament-heading">
           <div>
@@ -39,12 +47,14 @@
           <span class="capacity">{{ tournament.participants.length }}/{{ tournament.maxPlayers }}</span>
         </div>
 
+        <!-- Solo el organizador puede ver la acción para borrar un torneo en espera. -->
         @if (tournament.owner === currentUsername && tournament.status === 'WAITING') {
           <button type="button" class="delete-button" (click)="deleteTournament(tournament)">Eliminar torneo</button>
         }
 
         <p class="participants">{{ tournament.participants.join(', ') }}</p>
 
+        <!-- Las acciones de inscripción e inicio se muestran según las reglas del torneo. -->
         <div class="tournament-actions">
           @if (canJoin(tournament)) {
             <button type="button" (click)="joinTournament(tournament)">Apuntarme</button>
@@ -54,6 +64,7 @@
           }
         </div>
 
+        <!-- El cuadro solo existe cuando hay partidas; cada encuentro se sigue mediante su identificador estable. -->
         @if (tournament.matches.length > 0) {
           <ol class="bracket">
             @for (match of tournament.matches; track match.id) {
@@ -62,12 +73,14 @@
                 <span>{{ match.whitePlayer }} vs {{ match.blackPlayer }}</span>
                 <span>{{ match.winner ? 'Ganador: ' + match.winner
                   : match.status === 'DRAW' ? 'Empate · sorteo pendiente' : match.status }}</span>
+                <!-- El botón aparece solo para quien participa en una partida jugable o revancha. -->
                 @if ((match.status === 'PLAYING' || match.status === 'REMATCH') && isParticipant(tournament)
                     && (match.whitePlayer === currentUsername || match.blackPlayer === currentUsername)) {
                   <button type="button" (click)="playMatch(match)">
                     {{ match.status === 'REMATCH' ? 'Jugar revancha' : 'Jugar' }}
                   </button>
                 }
+                <!-- En caso de empate, un participante puede solicitar el sorteo del ganador. -->
                 @if (match.status === 'DRAW' && isParticipant(tournament)
                     && (match.whitePlayer === currentUsername || match.blackPlayer === currentUsername)) {
                   <button type="button" (click)="resolveDraw(match)">Sortear ganador</button>

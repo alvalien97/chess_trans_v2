@@ -112,9 +112,9 @@ public class AuthController {
 
     //Atiende GET /api/auth/users/{userId} para consultar un perfil público por su identificador.
     @GetMapping("/users/{userId}")
-    // Extrae userId de la ruta y exige la cabecera de autorización.
-    public PublicProfileView getPublicProfile(@RequestHeader("Authorization") String authorization,
-                                              @PathVariable Long userId) {
+    //Extrae userId de la ruta y exige la cabecera de autorización.
+    public PublicProfileView getPublicProfile(@RequestHeader("Authorization") String authorization, 
+            @PathVariable Long userId) {
         //Verifica que la petición corresponde a un usuario autenticado.
         authService.requireUserId(authorization);
         //Obtiene y devuelve la vista pública del usuario solicitado.

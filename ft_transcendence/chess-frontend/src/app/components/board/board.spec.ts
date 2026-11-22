@@ -1,12 +1,17 @@
+// Herramientas de Angular para probar componentes y simular sus dependencias.
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { provideZonelessChangeDetection } from '@angular/core';
+// Componente del tablero que se va a probar.
 import { BoardComponent } from './board.component';
 
+// Agrupa pruebas sobre el comportamiento del tablero de ajedrez.
 describe('BoardComponent', () => {
+  // Referencia al componente y al contenedor de prueba de Angular.
   let component: BoardComponent;
   let fixture: ComponentFixture<BoardComponent>;
 
+  // Crea un tablero nuevo antes de cada prueba.
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [BoardComponent],
@@ -19,14 +24,17 @@ describe('BoardComponent', () => {
     fixture.detectChanges();
   });
 
+  // Comprueba que el tablero se puede crear correctamente.
   it('should create', () => {
     expect(component).toBeTruthy();
   });
 
+  // Comprueba que una casilla se describe usando coordenadas y pieza comprensibles.
   it('labels squares with chess coordinates', () => {
     expect(component.getSquareLabel(0, 0)).toBe('a8, torre negras');
   });
 
+  // Comprueba que las flechas mueven el foco por las casillas del tablero.
   it('moves keyboard focus between squares with arrow keys', () => {
     component.queueState.set('MATCHED');
     fixture.detectChanges();
@@ -42,6 +50,7 @@ describe('BoardComponent', () => {
     expect(document.activeElement).toBe(squares[1]);
   });
 
+  // Comprueba que durante una partida aparecen las acciones de tablas y rendición.
   it('shows draw and resignation controls during a match', () => {
     component.gameId.set('game-1');
     component.playerColor.set(0);

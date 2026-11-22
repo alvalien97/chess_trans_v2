@@ -1,28 +1,33 @@
-import { provideZonelessChangeDetection } from '@angular/core';//importante para diferentes tamaños de pantalla
-import { provideHttpClient } from '@angular/common/http';//pa las peticiones
+// Configuración del mismo modo reactivo que usa la aplicación.
+import { provideZonelessChangeDetection } from '@angular/core';
+// Permite que los servicios HTTP funcionen también durante las pruebas.
+import { provideHttpClient } from '@angular/common/http';
+// Herramientas de Angular para crear componentes de prueba y respuestas HTTP simuladas.
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
+// Componente y servicios que se necesitan para probar la aplicación principal.
 import { App } from './app';
 import { AuthService } from './services/auth';
 import { PresenceWebsocketService } from './services/presence-websocket';
 
+// Agrupa las pruebas relacionadas con el componente principal.
 describe('App', () => {
+  // Prepara un entorno aislado antes de cada prueba.
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
       providers: [provideZonelessChangeDetection(), provideHttpClient()]
     }).compileComponents();
   });
-  /*
-  Importante que las peticiones sean asincronas para que se carguen todos los componenetes antes de mostrar nada, si no error
-  */
 
+  // Comprueba que Angular puede construir la aplicación.
   it('should create the app', () => {
     const fixture = TestBed.createComponent(App);
     const app = fixture.componentInstance;
     expect(app).toBeTruthy();
   });
 
+  // Comprueba que se pueden mantener varias partidas abiertas sin duplicados.
   it('keeps multiple games open without duplicating the same game', () => {
     const app = TestBed.createComponent(App).componentInstance;
     app.selectMatch({ gameId: 'game-1', color: 0, opponent: 'player-a' });
@@ -33,6 +38,7 @@ describe('App', () => {
     expect(app.sectionTitle()).toBe('Game');
   });
 
+  // Comprueba que los documentos legales se abren y se puede cambiar de uno a otro.
   it('opens the privacy and terms pages from the logged-out screen', () => {
     const fixture = TestBed.createComponent(App);
     fixture.detectChanges();
@@ -49,9 +55,11 @@ describe('App', () => {
     expect(fixture.nativeElement.textContent).toContain('No hay premios ni valor monetario');
   });
 
+  // Comprueba que un perfil público se muestra cuando el usuario tiene sesión iniciada.
   it('opens a public profile from the authenticated app', () => {
     const fixture = TestBed.createComponent(App);
     const auth = TestBed.inject(AuthService);
+    // Simula respuestas del backend para que la prueba no necesite una conexión real.
     spyOn(auth, 'getFriends').and.returnValue(of([]));
     spyOn(auth, 'getPublicProfile').and.returnValue(of({
       id: 42,
@@ -60,6 +68,7 @@ describe('App', () => {
       joinedAt: '2026-01-01T00:00:00Z',
       online: true
     }));
+    // Evita abrir un WebSocket real durante la prueba.
     spyOn(TestBed.inject(PresenceWebsocketService), 'connect').and.stub();
     auth.user.set({ id: 7, username: 'player', email: 'player@example.com' });
     fixture.detectChanges();
