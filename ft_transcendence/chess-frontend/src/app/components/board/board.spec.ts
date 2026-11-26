@@ -34,6 +34,17 @@ describe('BoardComponent', () => {
     expect(component.getSquareLabel(0, 0)).toBe('a8, torre negras');
   });
 
+  it('rotates the visible rows and columns for the black player', () => {
+    component.playerColor.set(1);
+    component.queueState.set('MATCHED');
+    fixture.detectChanges();
+
+    const squares = fixture.nativeElement.querySelectorAll('.square') as NodeListOf<HTMLButtonElement>;
+    expect(squares[0].getAttribute('aria-label')).toBe('h1, torre blancas');
+    expect(squares[7].getAttribute('aria-label')).toBe('a1, torre blancas');
+    expect(squares[56].getAttribute('aria-label')).toBe('h8, torre negras');
+  });
+
   // Comprueba que las flechas mueven el foco por las casillas del tablero.
   it('moves keyboard focus between squares with arrow keys', () => {
     component.queueState.set('MATCHED');
@@ -46,6 +57,22 @@ describe('BoardComponent', () => {
 
     expect(event.defaultPrevented).toBeTrue();
     expect(component.focusedSquare()).toEqual({ col: 1, row: 0 });
+    expect(squares[1].tabIndex).toBe(0);
+    expect(document.activeElement).toBe(squares[1]);
+  });
+
+  it('moves keyboard focus in the visible direction when the board is rotated', () => {
+    component.playerColor.set(1);
+    component.queueState.set('MATCHED');
+    fixture.detectChanges();
+    const squares = fixture.nativeElement.querySelectorAll('.square') as NodeListOf<HTMLButtonElement>;
+    const event = new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true });
+
+    component.onSquareKeydown(event, 7, 7);
+    fixture.detectChanges();
+
+    expect(event.defaultPrevented).toBeTrue();
+    expect(component.focusedSquare()).toEqual({ col: 6, row: 7 });
     expect(squares[1].tabIndex).toBe(0);
     expect(document.activeElement).toBe(squares[1]);
   });

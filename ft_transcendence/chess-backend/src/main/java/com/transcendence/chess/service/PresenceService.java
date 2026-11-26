@@ -53,11 +53,16 @@ public class PresenceService {
             return;
         }
         //Recupera el token guardado por el interceptor durante CONNECT, si hay atributos de sesión.
-        Object token = accessor.getSessionAttributes() == null
-            ? null
-            : accessor.getSessionAttributes().get("authToken");
+        Object token = null;
+        if (accessor.getSessionAttributes() != null) {
+            token = accessor.getSessionAttributes().get("authToken");
+        }
         //Registra la sesión y solo trata el atributo como token si su tipo es String.
-        registerSession(sessionId, Long.valueOf(principal.getName()), token instanceof String value ? value : null);
+        String tokenValue = null;
+        if (token instanceof String value) {
+            tokenValue = value;
+        }
+        registerSession(sessionId, Long.valueOf(principal.getName()), tokenValue);
     }
 
     //Atiende el evento de desconexión de una sesión STOMP.
@@ -98,7 +103,10 @@ public class PresenceService {
         //Añade la sesión al conjunto del usuario, creándolo si es la primera.
         sessionsByUser.compute(userId, (ignored, sessions) -> {
             //Reutiliza el conjunto existente o crea uno seguro para concurrencia.
-            Set<String> activeSessions = sessions == null ? ConcurrentHashMap.newKeySet() : sessions;
+            Set<String> activeSessions = sessions;
+            if (activeSessions == null) {
+                activeSessions = ConcurrentHashMap.newKeySet();
+            }
             //Anota si el conjunto estaba vacío antes de añadir la conexión.
             becameOnline.set(activeSessions.isEmpty());
             //Registra la sesión activa.
@@ -128,7 +136,10 @@ public class PresenceService {
         sessionsByUser.computeIfPresent(userId, (ignored, sessions) -> {
             sessions.remove(sessionId);
             becameOffline.set(sessions.isEmpty());
-            return sessions.isEmpty() ? null : sessions;
+            if (sessions.isEmpty()) {
+                return null;
+            }
+            return sessions;
         });
         //Publica offline solo cuando el conjunto de sesiones queda vacío.
         if (becameOffline.get()) {
@@ -177,7 +188,10 @@ public class PresenceService {
             //Elimina la sesión y elimina el conjunto si queda vacío.
             sessionsByToken.computeIfPresent(token, (ignored, sessions) -> {
                 sessions.remove(sessionId);
-                return sessions.isEmpty() ? null : sessions;
+                if (sessions.isEmpty()) {
+                    return null;
+                }
+                return sessions;
             });
         }
     }

@@ -23,6 +23,13 @@ export class LegalNoticeComponent implements AfterViewInit {
   // Evento que pide al padre cambiar entre privacidad y términos.
   @Output() navigate = new EventEmitter<LegalPage>();
 
+  currentPageAttribute(page: LegalPage): string | null {
+    if (this.page === page) {
+      return 'page';
+    }
+    return null;
+  }
+
   // Se ejecuta cuando Angular ya ha creado el contenido HTML de la plantilla.
   ngAfterViewInit() {
     // Enfoca el título para orientar a quienes usan teclado o lector de pantalla.

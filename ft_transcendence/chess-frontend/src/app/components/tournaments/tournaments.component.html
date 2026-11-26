@@ -71,13 +71,20 @@
               <li>
                 <span>R{{ match.round }}.{{ match.number }}</span>
                 <span>{{ match.whitePlayer }} vs {{ match.blackPlayer }}</span>
-                <span>{{ match.winner ? 'Ganador: ' + match.winner
-                  : match.status === 'DRAW' ? 'Empate · sorteo pendiente' : match.status }}</span>
+                <span>
+                  @if (match.winner) {
+                    Ganador: {{ match.winner }}
+                  } @else if (match.status === 'DRAW') {
+                    Empate · sorteo pendiente
+                  } @else {
+                    {{ match.status }}
+                  }
+                </span>
                 <!-- El botón aparece solo para quien participa en una partida jugable o revancha. -->
                 @if ((match.status === 'PLAYING' || match.status === 'REMATCH') && isParticipant(tournament)
                     && (match.whitePlayer === currentUsername || match.blackPlayer === currentUsername)) {
                   <button type="button" (click)="playMatch(match)">
-                    {{ match.status === 'REMATCH' ? 'Jugar revancha' : 'Jugar' }}
+                    @if (match.status === 'REMATCH') { Jugar revancha } @else { Jugar }
                   </button>
                 }
                 <!-- En caso de empate, un participante puede solicitar el sorteo del ganador. -->

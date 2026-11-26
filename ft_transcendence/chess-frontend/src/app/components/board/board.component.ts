@@ -127,6 +127,60 @@ export class BoardComponent implements OnInit, OnDestroy {
   boardRows = [0, 1, 2, 3, 4, 5, 6, 7];
   boardCols = [0, 1, 2, 3, 4, 5, 6, 7];
 
+  // Invierte filas y columnas para que negras vean sus piezas en la parte inferior.
+  get displayRows(): number[] {
+    return this.getDisplayOrder(this.boardRows);
+  }
+
+  get displayCols(): number[] {
+    return this.getDisplayOrder(this.boardCols);
+  }
+
+  get boardAriaLabel(): string {
+    if (this.playerColor() === 1) {
+      return 'Tablero de ajedrez desde la perspectiva de negras';
+    }
+    return 'Tablero de ajedrez desde la perspectiva de blancas';
+  }
+
+  private getDisplayOrder(coordinates: number[]): number[] {
+    const displayOrder: number[] = [];
+
+    if (this.playerColor() === 1) {
+      for (let index = coordinates.length - 1; index >= 0; index--) {
+        displayOrder.push(coordinates[index]);
+      }
+      return displayOrder;
+    }
+
+    for (let index = 0; index < coordinates.length; index++) {
+      displayOrder.push(coordinates[index]);
+    }
+    return displayOrder;
+  }
+
+  // Traduce coordenadas del juego al índice de la casilla en el orden visible del DOM.
+  private getSquareIndex(col: number, row: number): number {
+    let displayRow = -1;
+    let displayCol = -1;
+
+    for (let index = 0; index < this.displayRows.length; index++) {
+      if (this.displayRows[index] === row) {
+        displayRow = index;
+        break;
+      }
+    }
+
+    for (let index = 0; index < this.displayCols.length; index++) {
+      if (this.displayCols[index] === col) {
+        displayCol = index;
+        break;
+      }
+    }
+
+    return displayRow * 8 + displayCol;
+  }
+
   // Angular llama este método al mostrar el tablero.
   ngOnInit(): void {
     this.gameStatus.set('');
@@ -256,7 +310,10 @@ export class BoardComponent implements OnInit, OnDestroy {
       KING: '♚', QUEEN: '♛', ROOK: '♜', BISHOP: '♝', KNIGHT: '♞', PAWN: '♟'
     };
     // Elige la tabla correcta según el código de color del modelo.
-    const table = piece.color === 0 ? white : black;
+    let table = white;
+    if (piece.color !== 0) {
+      table = black;
+    }
     // Devuelve el símbolo correspondiente o ? si llega un tipo desconocido.
     return table[piece.type] ?? '?';
   }
@@ -280,20 +337,56 @@ export class BoardComponent implements OnInit, OnDestroy {
       KING: 'rey', QUEEN: 'reina', ROOK: 'torre', BISHOP: 'alfil', KNIGHT: 'caballo', PAWN: 'peón'
     };
     // Prepara el color y comprueba si esta es la pieza seleccionada.
-    const color = piece.color === 0 ? 'blancas' : 'negras';
-    const selected = this.selectedPiece()?.col === col && this.selectedPiece()?.row === row;
-    return `${coordinate}, ${pieceNames[piece.type] ?? 'pieza'} ${color}${selected ? ', seleccionada' : ''}`;
+    let color = 'negras';
+    if (piece.color === 0) {
+      color = 'blancas';
+    }
+    let selected = '';
+    if (this.selectedPiece()?.col === col && this.selectedPiece()?.row === row) {
+      selected = ', seleccionada';
+    }
+    return `${coordinate}, ${pieceNames[piece.type] ?? 'pieza'} ${color}${selected}`;
+  }
+
+  squareTabIndex(col: number, row: number): number {
+    if (this.focusedSquare().col === col && this.focusedSquare().row === row) {
+      return 0;
+    }
+    return -1;
   }
 
   // Permite recorrer el tablero con las teclas de flecha.
   onSquareKeydown(event: KeyboardEvent, col: number, row: number) {
-    // Calcula la casilla vecina indicada por la tecla pulsada.
-    const target = {
-      ArrowUp: { col, row: row - 1 },
-      ArrowDown: { col, row: row + 1 },
-      ArrowLeft: { col: col - 1, row },
-      ArrowRight: { col: col + 1, row }
-    }[event.key];
+    const isRotated = this.playerColor() === 1;
+    const target = { col, row };
+
+    if (event.key === 'ArrowUp') {
+      if (isRotated) {
+        target.row++;
+      } else {
+        target.row--;
+      }
+    } else if (event.key === 'ArrowDown') {
+      if (isRotated) {
+        target.row--;
+      } else {
+        target.row++;
+      }
+    } else if (event.key === 'ArrowLeft') {
+      if (isRotated) {
+        target.col++;
+      } else {
+        target.col--;
+      }
+    } else if (event.key === 'ArrowRight') {
+      if (isRotated) {
+        target.col--;
+      } else {
+        target.col++;
+      }
+    } else {
+      return;
+    }
 
     // Ignora otras teclas y movimientos que saldrían del tablero.
     if (!target || target.col < 0 || target.col > 7 || target.row < 0 || target.row > 7) {
@@ -303,7 +396,7 @@ export class BoardComponent implements OnInit, OnDestroy {
     // Evita el desplazamiento de la página y mueve el foco al botón de la casilla vecina.
     event.preventDefault();
     this.focusedSquare.set(target);
-    this.squareButtons.get(target.row * 8 + target.col)?.nativeElement.focus();
+    this.squareButtons.get(this.getSquareIndex(target.col, target.row))?.nativeElement.focus();
   }
 
   // Angular llama este método al retirar el tablero de la pantalla.
@@ -330,19 +423,26 @@ export class BoardComponent implements OnInit, OnDestroy {
     this.pieces.set(gameState.pieces ?? []);
     this.currentColor.set(gameState.currentColor ?? 0);
     this.gameStatus.set(gameState.status ?? 'PLAYING');
-    this.queueState.set(['CHECKMATE', 'DRAW', 'STALEMATE', 'RESIGNED'].includes(gameState.status ?? 'PLAYING')
-      ? 'FINISHED'
-      : 'MATCHED');
+    const finishedStatuses = ['CHECKMATE', 'DRAW', 'STALEMATE', 'RESIGNED'];
+    if (finishedStatuses.includes(gameState.status ?? 'PLAYING')) {
+      this.queueState.set('FINISHED');
+    } else {
+      this.queueState.set('MATCHED');
+    }
     this.drawOfferByUserId.set(gameState.drawOfferByUserId ?? null);
     // Construye un texto de resultado sencillo para jaque mate y rendición.
     if (gameState.winnerId && gameState.status === 'CHECKMATE') {
-      this.resultMessage.set(gameState.winnerId === this.currentUserId
-        ? 'Jaque mate. Has ganado.'
-        : 'Jaque mate. Ha ganado tu rival.');
+      if (gameState.winnerId === this.currentUserId) {
+        this.resultMessage.set('Jaque mate. Has ganado.');
+      } else {
+        this.resultMessage.set('Jaque mate. Ha ganado tu rival.');
+      }
     } else if (gameState.status === 'RESIGNED' && gameState.winnerId) {
-      this.resultMessage.set(gameState.winnerId === this.currentUserId
-        ? 'Tu rival se ha rendido. Has ganado.'
-        : 'Te has rendido. Ha ganado tu rival.');
+      if (gameState.winnerId === this.currentUserId) {
+        this.resultMessage.set('Tu rival se ha rendido. Has ganado.');
+      } else {
+        this.resultMessage.set('Te has rendido. Ha ganado tu rival.');
+      }
     } else {
       // Para otros finales utiliza el mensaje que haya preparado el backend.
       this.resultMessage.set(gameState.resultMessage ?? '');
@@ -353,7 +453,11 @@ export class BoardComponent implements OnInit, OnDestroy {
     const focused = this.focusedSquare();
     // Si la casilla enfocada ya no contiene pieza, vuelve a una casilla inicial válida.
     if (!this.getPieceAt(focused.col, focused.row)) {
-      this.focusedSquare.set({ col: 4, row: 6 });
+      let focusRow = 6;
+      if (this.playerColor() === 1) {
+        focusRow = 1;
+      }
+      this.focusedSquare.set({ col: 4, row: focusRow });
     }
   }
 
@@ -411,6 +515,11 @@ export class BoardComponent implements OnInit, OnDestroy {
     // Guarda los datos necesarios para mostrar la partida y el lado del jugador.
     this.gameId.set(assignment.gameId);
     this.playerColor.set(assignment.color);
+    let focusRow = 6;
+    if (assignment.color === 1) {
+      focusRow = 1;
+    }
+    this.focusedSquare.set({ col: 4, row: focusRow });
     this.opponent.set(assignment.opponent);
     this.queueState.set('MATCHED');
     this.selectedPiece.set(null);
@@ -438,6 +547,9 @@ export class BoardComponent implements OnInit, OnDestroy {
   // Crea una cabecera Authorization a partir del token de sesión, si existe.
   private authHeaders(): HttpHeaders | null {
     const authorization = this.auth.authorizationHeader;
-    return authorization ? new HttpHeaders({ Authorization: authorization }) : null;
+    if (authorization) {
+      return new HttpHeaders({ Authorization: authorization });
+    }
+    return null;
   }
 }

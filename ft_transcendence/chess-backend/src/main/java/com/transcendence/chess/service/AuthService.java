@@ -182,7 +182,10 @@ public class AuthService {
         //Rechaza búsquedas iniciadas desde una cuenta inexistente.
         requireUser(userId);
         //Convierte null en cadena vacía y elimina espacios externos.
-        String cleanQuery = query == null ? "" : query.trim();
+        String cleanQuery = "";
+        if (query != null) {
+            cleanQuery = query.trim();
+        }
         //Evita consultas demasiado cortas.
         if (cleanQuery.length() < 2) {
             return List.of();
@@ -215,7 +218,12 @@ public class AuthService {
         //Carga la cuenta que inicia la operación.
         User currentUser = requireUser(userId);
         //Normaliza el nombre recibido y tolera un valor null.
-        String cleanUsername = username == null ? "" : username.trim();
+        String cleanUsername;
+        if (username == null) {
+            cleanUsername = "";
+        } else {
+            cleanUsername = username.trim();
+        }
         //Rechaza una búsqueda de amistad sin nombre.
         if (cleanUsername.isBlank()) {
             throw new IllegalArgumentException("El nombre de usuario es obligatorio.");

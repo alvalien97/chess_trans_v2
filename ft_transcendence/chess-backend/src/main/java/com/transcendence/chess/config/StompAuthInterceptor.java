@@ -78,7 +78,10 @@ public class StompAuthInterceptor implements ChannelInterceptor {
                 //Lee el canal al que el cliente intenta suscribirse.
                 String destination = accessor.getDestination();
                 //Solo crea un matcher si existe un destino.
-                Matcher gameTopic = destination == null ? null : GAME_TOPIC.matcher(destination);
+                Matcher gameTopic = null;
+                if (destination != null) {
+                    gameTopic = GAME_TOPIC.matcher(destination);
+                }
                 //Si el canal tiene formato de partida, extrae el id y verifica los permisos.
                 if (gameTopic != null && gameTopic.matches()) {
                     gameService.assertPlayer(gameTopic.group(1), Long.valueOf(principal.getName()));

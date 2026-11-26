@@ -19,7 +19,9 @@
     <!-- submit evita la recarga normal del navegador y llama al método Angular de autenticación. -->
     <form class="auth-card" (submit)="$event.preventDefault(); submit()">
       <p class="eyebrow">TU MESA TE ESPERA</p>
-      <h2>{{ mode() === 'register' ? 'Crear cuenta' : 'Iniciar sesión' }}</h2>
+      <h2>
+        @if (mode() === 'register') { Crear cuenta } @else { Iniciar sesión }
+      </h2>
       <!-- El formulario de registro añade el nombre; ngModel mantiene el campo sincronizado con el componente. -->
       @if (mode() === 'register') {
         <label for="username">Usuario</label>
@@ -32,18 +34,20 @@
         autocomplete="email" required />
       <label for="password">Contraseña</label>
       <input id="password" name="password" type="password" [(ngModel)]="password"
-        autocomplete="{{ mode() === 'register' ? 'new-password' : 'current-password' }}"
+        [attr.autocomplete]="passwordAutocomplete"
         minlength="8" maxlength="72" required />
       <!-- Los errores se anuncian inmediatamente a tecnologías de asistencia mediante role="alert". -->
       @if (errorMessage()) {
         <p class="error" role="alert">{{ errorMessage() }}</p>
       }
       <!-- El texto del botón cambia según el modo actual y el envío invoca la autenticación. -->
-      <button type="submit" class="primary-button">{{ mode() === 'register' ? 'Registrarse' : 'Entrar' }}</button>
+      <button type="submit" class="primary-button">
+        @if (mode() === 'register') { Registrarse } @else { Entrar }
+      </button>
       <!-- Al hacer clic, cambia entre registro e inicio de sesión; la interpolación actualiza su etiqueta. -->
       <button type="button" class="text-button"
-        (click)="mode.set(mode() === 'register' ? 'login' : 'register')">
-        {{ mode() === 'register' ? 'Ya tengo cuenta' : 'Crear una cuenta' }}
+        (click)="toggleAuthMode()">
+        @if (mode() === 'register') { Ya tengo cuenta } @else { Crear una cuenta }
       </button>
     </form>
     <!-- Enlaces de acceso a los documentos legales, nombrados para lectores de pantalla. -->
@@ -69,7 +73,7 @@
         @for (item of navigation; track item.id) {
           <!-- Las clases y aria-current reflejan la sección activa; click cambia la sección mostrada. -->
           <button type="button" class="nav-item" [class.active]="activeSection() === item.id"
-            [attr.aria-current]="activeSection() === item.id ? 'page' : null"
+            [attr.aria-current]="currentSectionAttribute(item.id)"
             (click)="navigateTo(item.id)">
             <span class="nav-number">{{ item.number }}</span>
             <span>{{ item.label }}</span>
@@ -163,7 +167,7 @@
                   <input id="friend-search" name="friendSearchQuery" [(ngModel)]="friendSearchQuery"
                     placeholder="Nombre de usuario" maxlength="32" />
                   <button type="submit" class="primary-button" [disabled]="friendSearchLoading()">
-                    {{ friendSearchLoading() ? 'Buscando...' : 'Buscar' }}
+                    {{ friendSearchButtonLabel() }}
                   </button>
                 </form>
                 <!-- Los estados de error y resultado solo aparecen cuando contienen información. -->
@@ -184,7 +188,7 @@
                           <button type="button" class="profile-link" (click)="openProfile(result.id)">
                             <strong>{{ result.username }}</strong>
                           </button>
-                          <small>{{ result.online ? 'Conectado' : 'Desconectado' }}</small></div>
+                          <small>{{ presenceLabel(result.online) }}</small></div>
                         <button type="button" class="add-friend-button" (click)="addFriend(result.username)">Añadir</button>
                       </li>
                     }
@@ -207,10 +211,11 @@
                           <button type="button" class="profile-link" (click)="openProfile(friend.id)">
                             <strong>{{ friend.username }}</strong>
                           </button>
-                          <small>{{ friend.online ? 'Conectado' : 'Desconectado' }}</small>
+                          <small>{{ presenceLabel(friend.online) }}</small>
                         </div>
                         <!-- aria-label describe el estado con palabras, no solo mediante el color del punto. -->
-                        <span class="status-dot" [class.online]="friend.online" aria-label="{{ friend.online ? 'Conectado' : 'Desconectado' }}"></span>
+                        <span class="status-dot" [class.online]="friend.online"
+                          [attr.aria-label]="presenceLabel(friend.online)"></span>
                         <!-- El nombre accesible incluye a quién se va a eliminar, evitando botones ambiguos. -->
                         <button type="button" class="remove-friend-button" (click)="removeFriend(friend.id)"
                           [attr.aria-label]="'Eliminar a ' + friend.username">Eliminar</button>
@@ -272,7 +277,7 @@
                 <h2 id="public-profile-title">{{ profile.username }}</h2>
                 <p class="profile-presence">
                   <span class="status-dot" [class.online]="profile.online"></span>
-                  {{ profile.online ? 'Conectado ahora' : 'Desconectado' }}
+                  {{ profilePresenceLabel(profile.online) }}
                 </p>
                 <p class="profile-joined">Miembro desde el {{ formatJoinDate(profile.joinedAt) }}</p>
               </article>

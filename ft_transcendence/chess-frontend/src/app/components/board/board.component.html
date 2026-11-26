@@ -30,15 +30,15 @@
       <!-- Las interpolaciones muestran rival y color asignado a este jugador. -->
       <p class="match-info">
         Contra <strong>{{ opponent() }}</strong>
-        · Juegas con {{ playerColor() === 0 ? 'blancas' : 'negras' }}
+        · Juegas con @if (playerColor() === 0) { blancas } @else { negras }
       </p>
       <!-- El turno se comunica como estado dinámico para lectores de pantalla. -->
       @if (queueState() === 'MATCHED') {
         <p class="turn" role="status" aria-live="polite">
           @if (currentColor() === playerColor()) {
-            Tu turno: {{ currentColor() === 0 ? 'blancas' : 'negras' }}
+            Tu turno: @if (currentColor() === 0) { blancas } @else { negras }
           } @else {
-            Turno del rival: {{ currentColor() === 0 ? 'blancas' : 'negras' }}
+            Turno del rival: @if (currentColor() === 0) { blancas } @else { negras }
           }
         </p>
       }
@@ -79,13 +79,13 @@
     @if (queueState() === 'MATCHED' || queueState() === 'FINISHED') {
       <!-- role=grid, row y gridcell describen la cuadrícula; aria-label da contexto y preview aplica su estado visual. -->
       <div class="chess-board" [class.preview]="queueState() !== 'MATCHED'"
-        role="grid" aria-label="Tablero de ajedrez, 8 por 8">
+        role="grid" [attr.aria-label]="boardAriaLabel">
         <!-- Cada fila se sigue con su propio valor; aria-rowindex comunica su posición empezando en uno. -->
-        @for (row of boardRows; track row) {
-          <div class="board-row" role="row" [attr.aria-rowindex]="row + 1">
+        @for (row of displayRows; track row; let displayRow = $index) {
+          <div class="board-row" role="row" [attr.aria-rowindex]="displayRow + 1">
             <!-- Cada columna forma una celda accesible y aria-colindex comunica su posición empezando en uno. -->
-            @for (col of boardCols; track col) {
-              <div role="gridcell" [attr.aria-colindex]="col + 1">
+            @for (col of displayCols; track col; let displayCol = $index) {
+              <div role="gridcell" [attr.aria-colindex]="displayCol + 1">
                 <!-- Cada botón representa una casilla; sus bindings describen estado, foco y selección y capturan ratón y teclado. -->
                 <button
                   #squareButton
@@ -97,7 +97,7 @@
                   [attr.aria-label]="getSquareLabel(col, row)"
                   [attr.aria-pressed]="selectedPiece()?.col === col && selectedPiece()?.row === row"
                   [attr.aria-disabled]="queueState() !== 'MATCHED' || currentColor() !== playerColor()"
-                  [attr.tabindex]="focusedSquare().col === col && focusedSquare().row === row ? 0 : -1"
+                  [attr.tabindex]="squareTabIndex(col, row)"
                   (click)="onSquareClick(col, row)"
                   (keydown)="onSquareKeydown($event, col, row)">
                   <!-- La pieza solo se dibuja si existe; 'as piece' permite reutilizarla dentro del bloque. -->

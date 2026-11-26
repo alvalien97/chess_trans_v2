@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.BooleanSupplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -42,22 +43,32 @@ public class MatchmakingService {
     private final GameRepository gameRepository;
     private final UserRepository userRepository;
     private final Clock clock;
+    private final BooleanSupplier waitingPlayerGetsWhite;
 
     //Constructor usado por Spring; utiliza el reloj UTC real en producción.
     @Autowired
     public MatchmakingService(GameRepository gameRepository, UserRepository userRepository) {
         //Delega en el constructor que permite proporcionar un reloj explícito.
-        this(gameRepository, userRepository, Clock.systemUTC());
+        this(gameRepository, userRepository, Clock.systemUTC(),
+                () -> ThreadLocalRandom.current().nextBoolean());
     }
 
     //Constructor de paquete que permite inyectar un reloj controlado en pruebas.
     MatchmakingService(GameRepository gameRepository, UserRepository userRepository, Clock clock) {
+        this(gameRepository, userRepository, clock,
+                () -> ThreadLocalRandom.current().nextBoolean());
+    }
+
+    //Constructor de paquete que permite controlar el sorteo de color en pruebas.
+    MatchmakingService(GameRepository gameRepository, UserRepository userRepository, Clock clock,
+                       BooleanSupplier waitingPlayerGetsWhite) {
         //Conserva el repositorio de partidas.
         this.gameRepository = gameRepository;
         //Conserva el repositorio de usuarios.
         this.userRepository = userRepository;
         //Conserva el reloj usado para medir inactividad.
         this.clock = clock;
+        this.waitingPlayerGetsWhite = waitingPlayerGetsWhite;
     }
 
     //Entra en la cola o empareja al usuario con alguien que ya esperaba.
@@ -95,12 +106,22 @@ public class MatchmakingService {
         queuedPlayers.remove(opponentId);
         //Ya no necesita tiempo de actividad mientras espera.
         lastSeen.remove(opponentId);
-        //Carga al usuario que esperaba para asignarlo al lado blanco.
-        User whitePlayer = userRepository.findById(opponentId)
+        //Carga al usuario que ya estaba esperando.
+        User waitingPlayer = userRepository.findById(opponentId)
                 .orElseThrow(() -> new IllegalStateException("El usuario en espera ya no existe."));
-        //Carga al usuario actual para asignarlo al lado negro.
-        User blackPlayer = userRepository.findById(userId)
+        //Carga al usuario que acaba de entrar.
+        User joiningPlayer = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalStateException("El usuario autenticado ya no existe."));
+
+        User whitePlayer;
+        User blackPlayer;
+        if (waitingPlayerGetsWhite.getAsBoolean()) {
+            whitePlayer = waitingPlayer;
+            blackPlayer = joiningPlayer;
+        } else {
+            whitePlayer = joiningPlayer;
+            blackPlayer = waitingPlayer;
+        }
 
     //Crea una partida con identificador aleatorio.
         Game game = new Game();
@@ -174,9 +195,17 @@ public class MatchmakingService {
         //Determina si el usuario es el jugador blanco.
         boolean isWhite = game.getWhitePlayer().getId().equals(userId);
         //Selecciona al otro jugador como rival.
-        User opponent = isWhite ? game.getBlackPlayer() : game.getWhitePlayer();
+        User opponent;
+        int color;
+        if (isWhite) {
+            opponent = game.getBlackPlayer();
+            color = 0;
+        } else {
+            opponent = game.getWhitePlayer();
+            color = 1;
+        }
         //Devuelve el id de partida, el color local y el nombre del rival.
-        return new MatchmakingStatus("MATCHED", game.getId(), isWhite ? 0 : 1, opponent.getUsername());
+        return new MatchmakingStatus("MATCHED", game.getId(), color, opponent.getUsername());
     }
 
     //Construye una respuesta estándar para alguien que sigue esperando.

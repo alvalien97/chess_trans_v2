@@ -10,9 +10,9 @@
 
   <nav class="legal-nav" aria-label="Documentos legales">
     <!-- aria-label nombra la navegación; aria-current marca cuál documento se está leyendo. -->
-    <button type="button" [attr.aria-current]="page === 'privacy' ? 'page' : null"
+    <button type="button" [attr.aria-current]="currentPageAttribute('privacy')"
       (click)="navigate.emit('privacy')">Política de privacidad</button>
-    <button type="button" [attr.aria-current]="page === 'terms' ? 'page' : null"
+    <button type="button" [attr.aria-current]="currentPageAttribute('terms')"
       (click)="navigate.emit('terms')">Términos de servicio</button>
   </nav>
 

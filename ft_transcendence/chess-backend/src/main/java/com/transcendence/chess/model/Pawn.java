@@ -20,7 +20,10 @@ public class Pawn extends Piece {
         //Solo considera destinos del tablero que no sean la casilla de origen.
         if (isWithinBoard(targetCol, targetRow) && !isSameSquare(targetCol, targetRow)) {
             //Las blancas avanzan hacia filas menores y las negras hacia filas mayores.
-            int moveValue = (color == 0) ? -1 : 1; // 0 para blancas, 1 para negras
+            int moveValue = 1;
+            if (color == 0) {
+                moveValue = -1;
+            }
 
             //Averigua si hay una pieza ocupando la casilla de destino.
             hittingP = getHittingP(targetCol, targetRow, pieces);

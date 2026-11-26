@@ -54,7 +54,10 @@ export class AuthService {
     }
     // Recupera la credencial que se guardó al iniciar sesión.
     const token = sessionStorage.getItem('token');
-    return token ? `Bearer ${token}` : null;
+    if (token) {
+      return `Bearer ${token}`;
+    }
+    return null;
   }
 
   // Envía los datos de registro y guarda la sesión cuando el backend responde correctamente.
@@ -157,12 +160,19 @@ export class AuthService {
     }
     // JSON.parse convierte el texto almacenado en un objeto de usuario.
     const raw = sessionStorage.getItem('user');
-    return raw ? JSON.parse(raw) : null;
+    if (raw) {
+      return JSON.parse(raw);
+    }
+    return null;
   }
 
   // Crea las cabeceras HTTP e incluye el token cuando hay una sesión activa.
   private authHeaders() {
     const authorization = this.authorizationHeader;
-    return new HttpHeaders(authorization ? { Authorization: authorization } : {});
+    const headers: Record<string, string> = {};
+    if (authorization) {
+      headers['Authorization'] = authorization;
+    }
+    return new HttpHeaders(headers);
   }
 }

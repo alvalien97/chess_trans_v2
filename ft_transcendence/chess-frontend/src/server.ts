@@ -36,7 +36,13 @@ app.use((req, res, next) => {
     .handle(req)
     .then((response) =>
       // Si Angular generó una respuesta, se la devuelve al navegador; si no, sigue Express.
-      response ? writeResponseToNodeResponse(response, res) : next(),
+      {
+        if (response) {
+          writeResponseToNodeResponse(response, res);
+        } else {
+          next();
+        }
+      },
     )
     // Pasa los errores al manejador de errores de Express.
     .catch(next);

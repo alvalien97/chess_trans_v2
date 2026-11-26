@@ -90,17 +90,36 @@ export class App {
         this.loadFriends();
         this.presence.connect((update) => {
           // Actualiza el estado online en la lista de amigos.
-          this.friends.update((friends) => friends.map((friend) => friend.id === update.userId
-            ? { ...friend, online: update.online }
-            : friend));
+          this.friends.update((friends) => {
+            const updatedFriends: FriendView[] = [];
+            for (const friend of friends) {
+              if (friend.id === update.userId) {
+                updatedFriends.push({ ...friend, online: update.online });
+              } else {
+                updatedFriends.push(friend);
+              }
+            }
+            return updatedFriends;
+          });
           // Actualiza también los resultados visibles del buscador.
-          this.friendSearchResults.update((results) => results.map((result) => result.id === update.userId
-            ? { ...result, online: update.online }
-            : result));
+          this.friendSearchResults.update((results) => {
+            const updatedResults: FriendView[] = [];
+            for (const result of results) {
+              if (result.id === update.userId) {
+                updatedResults.push({ ...result, online: update.online });
+              } else {
+                updatedResults.push(result);
+              }
+            }
+            return updatedResults;
+          });
           // Si el perfil abierto es de esa persona, actualiza su presencia también.
-          this.publicProfile.update((profile) => profile?.id === update.userId
-            ? { ...profile, online: update.online }
-            : profile);
+          this.publicProfile.update((profile) => {
+            if (profile && profile.id === update.userId) {
+              return { ...profile, online: update.online };
+            }
+            return profile;
+          });
         });
       } else {
         // Sin sesión no hay que recibir presencia ni conservar listas de la cuenta anterior.
@@ -116,9 +135,12 @@ export class App {
   submit() {
     // Limpia un error anterior antes de intentar la nueva petición.
     this.errorMessage.set('');
-    const request$ = this.mode() === 'register'
-      ? this.auth.register({ username: this.username, email: this.email, password: this.password })
-      : this.auth.login({ email: this.email, password: this.password });
+    let request$: ReturnType<AuthService['login']>;
+    if (this.mode() === 'register') {
+      request$ = this.auth.register({ username: this.username, email: this.email, password: this.password });
+    } else {
+      request$ = this.auth.login({ email: this.email, password: this.password });
+    }
 
     // subscribe inicia la petición y define qué hacer con éxito o con error.
     request$.subscribe({
@@ -159,14 +181,67 @@ export class App {
 
   // Busca el título de la sección activa para mostrarlo en la cabecera.
   sectionTitle() {
-    return this.navigation.find((item) => item.id === this.activeSection())?.label
-      ?? (this.activeSection() === 'profile' ? 'Perfil de jugador' : 'Home');
+    const activeItem = this.navigation.find((item) => item.id === this.activeSection());
+    if (activeItem) {
+      return activeItem.label;
+    }
+    if (this.activeSection() === 'profile') {
+      return 'Perfil de jugador';
+    }
+    return 'Home';
+  }
+
+  get passwordAutocomplete(): string {
+    if (this.mode() === 'register') {
+      return 'new-password';
+    }
+    return 'current-password';
+  }
+
+  currentSectionAttribute(section: AppSection): string | null {
+    if (this.activeSection() === section) {
+      return 'page';
+    }
+    return null;
+  }
+
+  presenceLabel(isOnline: boolean): string {
+    if (isOnline) {
+      return 'Conectado';
+    }
+    return 'Desconectado';
+  }
+
+  profilePresenceLabel(isOnline: boolean): string {
+    if (isOnline) {
+      return 'Conectado ahora';
+    }
+    return 'Desconectado';
+  }
+
+  friendSearchButtonLabel(): string {
+    if (this.friendSearchLoading()) {
+      return 'Buscando...';
+    }
+    return 'Buscar';
+  }
+
+  toggleAuthMode() {
+    if (this.mode() === 'register') {
+      this.mode.set('login');
+    } else {
+      this.mode.set('register');
+    }
   }
 
   // Abre un perfil público y solicita sus datos al backend.
   openProfile(userId: number) {
     // Recuerda desde qué sección se abrió el perfil.
-    this.profileReturnSection = this.activeSection() === 'profile' ? 'home' : this.activeSection();
+    if (this.activeSection() === 'profile') {
+      this.profileReturnSection = 'home';
+    } else {
+      this.profileReturnSection = this.activeSection();
+    }
     // Limpia los datos anteriores y muestra el estado de carga.
     this.publicProfile.set(null);
     this.profileError.set('');
@@ -193,7 +268,11 @@ export class App {
   // Cierra el perfil y vuelve a la sección desde la que se había abierto.
   closeProfile() {
     this.profileRequestId++;
-    this.activeSection.set(this.profileReturnSection === 'profile' ? 'home' : this.profileReturnSection);
+    if (this.profileReturnSection === 'profile') {
+      this.activeSection.set('home');
+    } else {
+      this.activeSection.set(this.profileReturnSection);
+    }
   }
 
   // Convierte la fecha ISO recibida del backend a una fecha legible en español.
@@ -204,9 +283,14 @@ export class App {
   // Añade la partida seleccionada a la lista y muestra la sección del tablero.
   selectMatch(match: MatchAssignment) {
     // Evita abrir dos veces la misma partida.
-    this.activeMatches.update((matches) => matches.some((item) => item.gameId === match.gameId)
-      ? matches
-      : [...matches, match]);
+    this.activeMatches.update((matches) => {
+      for (const activeMatch of matches) {
+        if (activeMatch.gameId === match.gameId) {
+          return matches;
+        }
+      }
+      return [...matches, match];
+    });
     this.activeSection.set('game');
   }
 
@@ -299,7 +383,11 @@ export class App {
     this.auth.searchUsers(query).subscribe({
       next: (results) => {
         this.friendSearchResults.set(results);
-        this.friendSearchMessage.set(results.length ? '' : 'No se han encontrado usuarios con ese nombre.');
+        if (results.length > 0) {
+          this.friendSearchMessage.set('');
+        } else {
+          this.friendSearchMessage.set('No se han encontrado usuarios con ese nombre.');
+        }
         this.friendSearchLoading.set(false);
       },
       error: (error) => {

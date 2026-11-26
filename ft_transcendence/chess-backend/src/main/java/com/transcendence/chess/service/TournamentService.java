@@ -180,9 +180,12 @@ public class TournamentService {
         }
         //Si el resultado fue tablas, elige aleatoriamente un ganador para que avance el cuadro.
         if (winnerId == null) {
-            User winner = ThreadLocalRandom.current().nextBoolean()
-                    ? match.getWhitePlayer()
-                    : match.getBlackPlayer();
+            User winner;
+            if (ThreadLocalRandom.current().nextBoolean()) {
+                winner = match.getWhitePlayer();
+            } else {
+                winner = match.getBlackPlayer();
+            }
             completeMatch(match, winner);
             return;
         }
@@ -214,9 +217,12 @@ public class TournamentService {
             throw new IllegalArgumentException("Este encuentro no tiene un empate pendiente.");
         }
         //Decide aleatoriamente qué participante avanza.
-        User winner = ThreadLocalRandom.current().nextBoolean()
-                ? match.getWhitePlayer()
-                : match.getBlackPlayer();
+        User winner;
+        if (ThreadLocalRandom.current().nextBoolean()) {
+            winner = match.getWhitePlayer();
+        } else {
+            winner = match.getBlackPlayer();
+        }
             //Marca al ganador y actualiza el progreso del cuadro.
         completeMatch(match, winner);
             //Devuelve la vista del torneo que contiene el encuentro.
@@ -309,13 +315,20 @@ public class TournamentService {
                         match.getWhitePlayer().getUsername(),
                         match.getBlackPlayer().getId(),
                         match.getBlackPlayer().getUsername(),
-                        match.getWinner() == null ? null : match.getWinner().getUsername(),
+                        getWinnerUsername(match),
                         match.getGame().getId(),
                         match.getStatus()))
                 .toList();
             //Construye la respuesta completa con el torneo, participantes y encuentros.
         return new TournamentView(tournament.getId(), tournament.getName(), tournament.getStatus(),
                 tournament.getOwner().getUsername(), tournament.getMaxPlayers(), participants, matches);
+    }
+
+    private String getWinnerUsername(TournamentMatch match) {
+        if (match.getWinner() == null) {
+            return null;
+        }
+        return match.getWinner().getUsername();
     }
 
     //Busca un torneo o responde HTTP 404 si no existe.

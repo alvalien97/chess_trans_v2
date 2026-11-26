@@ -42,7 +42,8 @@ class MatchmakingServiceTest {
         when(userRepository.findById(22L)).thenReturn(Optional.of(blackPlayer));
         when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        MatchmakingService matchmaking = new MatchmakingService(gameRepository, userRepository);
+        MatchmakingService matchmaking = new MatchmakingService(
+            gameRepository, userRepository, Clock.systemUTC(), () -> true);
 
         //La primera entrada espera; repetirla no añade una segunda plaza.
         assertEquals("WAITING", matchmaking.joinQueue(11L).status());
@@ -62,6 +63,27 @@ class MatchmakingServiceTest {
         assertEquals("MATCHED", waitingPlayerStatus.status());
         assertEquals(0, waitingPlayerStatus.color());
         assertEquals("mmembril", waitingPlayerStatus.opponent());
+    }
+
+    @Test
+    void canAssignWhiteToThePlayerWhoJoinsTheQueueSecond() {
+        GameRepository gameRepository = mock(GameRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        User waitingPlayer = player(11L, "alvalien");
+        User joiningPlayer = player(22L, "mmembril");
+        when(userRepository.findById(11L)).thenReturn(Optional.of(waitingPlayer));
+        when(userRepository.findById(22L)).thenReturn(Optional.of(joiningPlayer));
+        when(gameRepository.save(any(Game.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        MatchmakingService matchmaking = new MatchmakingService(
+                gameRepository, userRepository, Clock.systemUTC(), () -> false);
+
+        assertEquals("WAITING", matchmaking.joinQueue(11L).status());
+        MatchmakingStatus joiningPlayerStatus = matchmaking.joinQueue(22L);
+        MatchmakingStatus waitingPlayerStatus = matchmaking.getStatus(11L);
+
+        assertEquals(0, joiningPlayerStatus.color());
+        assertEquals(1, waitingPlayerStatus.color());
     }
 
     //Un usuario que deja de enviar señales de actividad expira de la cola.

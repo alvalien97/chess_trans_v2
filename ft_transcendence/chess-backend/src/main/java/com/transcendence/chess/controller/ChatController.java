@@ -32,7 +32,12 @@ public class ChatController {
     //Recibe el contenido y la identidad autenticada de quien lo envía.
     public ChatMessage sendMessage(ChatMessage chatMessage, Principal principal) {
         //Sustituye el contenido nulo por texto vacío y elimina espacios al principio y al final.
-        String content = chatMessage.getContent() == null ? "" : chatMessage.getContent().trim();
+        String content = chatMessage.getContent();
+        if (content == null) {
+            content = "";
+        } else {
+            content = content.trim();
+        }
         //Rechaza mensajes vacíos o que superen el máximo de 280 caracteres.
         if (content.isEmpty() || content.length() > 280) {
             //Informa del límite aceptado para los mensajes del chat.

@@ -110,10 +110,19 @@ export class TournamentsComponent implements OnInit, OnDestroy {
   // Avisa al componente padre de qué partida abrir y qué color asignar al jugador.
   playMatch(match: TournamentMatch) {
     const isWhite = match.whitePlayer === this.currentUsername;
+    let color: number;
+    let opponent: string;
+    if (isWhite) {
+      color = 0;
+      opponent = match.blackPlayer;
+    } else {
+      color = 1;
+      opponent = match.whitePlayer;
+    }
     this.playGame.emit({
       gameId: match.gameId,
-      color: isWhite ? 0 : 1,
-      opponent: isWhite ? match.blackPlayer : match.whitePlayer
+      color,
+      opponent
     });
   }
 
@@ -161,6 +170,10 @@ export class TournamentsComponent implements OnInit, OnDestroy {
   // Añade a las peticiones el token que identifica al usuario conectado.
   private headers() {
     const authorization = this.auth.authorizationHeader;
-    return new HttpHeaders(authorization ? { Authorization: authorization } : {});
+    const headers: Record<string, string> = {};
+    if (authorization) {
+      headers['Authorization'] = authorization;
+    }
+    return new HttpHeaders(headers);
   }
 }

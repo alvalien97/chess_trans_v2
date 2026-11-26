@@ -39,7 +39,11 @@ public class ChessRules {
         //Prepara el estado de dominio que se devolverá al cliente.
         GameState state = new GameState();
         //Traduce el lado activo a la convención local: blancas=0 y negras=1.
-        state.setCurrentColor(board.getSideToMove() == Side.WHITE ? 0 : 1);
+        if (board.getSideToMove() == Side.WHITE) {
+            state.setCurrentColor(0);
+        } else {
+            state.setCurrentColor(1);
+        }
         //Copia a la respuesta la etiqueta calculada según el estado del motor.
         state.setStatus(getStatus());
 
@@ -146,7 +150,10 @@ public class ChessRules {
     //Convierte una pieza de chesslib a la subclase del modelo que usa la aplicación.
     private Piece toModelPiece(com.github.bhlangonijr.chesslib.Piece piece, int col, int row) {
         //Traduce el lado a la convención local de colores.
-        int color = piece.getPieceSide() == Side.WHITE ? 0 : 1;
+        int color = 1;
+        if (piece.getPieceSide() == Side.WHITE) {
+            color = 0;
+        }
         //Elige la clase concreta de pieza según el tipo recibido.
         return switch (piece.getPieceType()) {
             //Crea el modelo de rey.

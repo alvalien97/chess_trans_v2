@@ -78,10 +78,14 @@ export class ChessWebsocketService {
 
     // Si hay sesión, el token se envía al servidor al iniciar la conexión.
     const authorization = this.auth.authorizationHeader;
+    const connectHeaders: Record<string, string> = {};
+    if (authorization) {
+      connectHeaders['Authorization'] = authorization;
+    }
     this.stompClient = new Client({
       // Crea el transporte WebSocket en la ruta que publica el backend.
       webSocketFactory: () => new SockJS('/ws'),
-      connectHeaders: authorization ? { Authorization: authorization } : {},
+      connectHeaders,
       // Espera cinco segundos antes de volver a intentar tras una desconexión.
       reconnectDelay: 5000,
       // Desactiva los mensajes de diagnóstico de STOMP en la consola.

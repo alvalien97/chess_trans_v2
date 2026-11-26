@@ -33,10 +33,14 @@ export class PresenceWebsocketService {
 
     // Incluye el token para que el backend pueda asociar la conexión a una cuenta.
     const authorization = this.auth.authorizationHeader;
+    const connectHeaders: Record<string, string> = {};
+    if (authorization) {
+      connectHeaders['Authorization'] = authorization;
+    }
     this.client = new Client({
       // Abre el WebSocket publicado por el backend en /ws.
       webSocketFactory: () => new SockJS('/ws'),
-      connectHeaders: authorization ? { Authorization: authorization } : {},
+      connectHeaders,
       // Reintenta la conexión tres segundos después de una desconexión.
       reconnectDelay: 3000,
       // Evita imprimir información de depuración de STOMP en la consola.

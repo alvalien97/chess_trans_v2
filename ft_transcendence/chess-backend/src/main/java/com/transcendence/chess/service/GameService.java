@@ -57,7 +57,10 @@ public class GameService {
         requirePlaying(game);
 
         //Determina el color del jugador según su id y la plaza de blancas/negras.
-        int playerColor = Objects.equals(game.getWhitePlayer().getId(), userId) ? 0 : 1;
+        int playerColor = 1;
+        if (Objects.equals(game.getWhitePlayer().getId(), userId)) {
+            playerColor = 0;
+        }
         //Obtiene o crea el motor de reglas asociado a esta partida.
         ChessRules rules = getRules(game);
         //El color al turno del tablero debe coincidir con el jugador que envió la jugada.
@@ -81,14 +84,22 @@ public class GameService {
             game.setStatus(state.getStatus());
             //En jaque mate, el ganador es el jugador del color contrario al que tiene el turno.
             if (state.getStatus().equals("CHECKMATE")) {
-                game.setWinner(state.getCurrentColor() == 1 ? game.getWhitePlayer() : game.getBlackPlayer());
+                if (state.getCurrentColor() == 1) {
+                    game.setWinner(game.getWhitePlayer());
+                } else {
+                    game.setWinner(game.getBlackPlayer());
+                }
             }
             //Persiste el resultado para que esté disponible después de la operación.
             gameRepository.save(game);
             //Limpia cualquier oferta de tablas que ya no tenga sentido tras finalizar.
             game.setDrawOfferer(null);
             //Notifica al servicio de torneos que la partida terminó y quién ganó, si corresponde.
-            tournamentService.completeGame(gameId, game.getWinner() == null ? null : game.getWinner().getId());
+            Long winnerId = null;
+            if (game.getWinner() != null) {
+                winnerId = game.getWinner().getId();
+            }
+            tournamentService.completeGame(gameId, winnerId);
         }
         //Devuelve una vista que combina el tablero con los metadatos persistidos de la partida.
         return stateFor(game);
@@ -104,9 +115,12 @@ public class GameService {
         //Solo se puede rendir una partida en curso.
         requirePlaying(game);
         //El rival del usuario que se rinde pasa a ser ganador.
-        User winner = game.getWhitePlayer().getId().equals(userId)
-                ? game.getBlackPlayer()
-                : game.getWhitePlayer();
+        User winner;
+        if (game.getWhitePlayer().getId().equals(userId)) {
+            winner = game.getBlackPlayer();
+        } else {
+            winner = game.getWhitePlayer();
+        }
         //Guarda quién ganó.
         game.setWinner(winner);
         //Marca el final con el estado de rendición.
@@ -134,15 +148,17 @@ public class GameService {
         User currentOffer = game.getDrawOfferer();
         //No se permiten ofertas duplicadas ni una nueva oferta mientras responde el rival.
         if (currentOffer != null) {
-            //Diferencia entre repetir una oferta propia y no responder a la oferta rival.
-            throw new IllegalArgumentException(currentOffer.getId().equals(userId)
-                    ? "Ya ofreciste tablas; espera la respuesta del rival."
-                    : "Responde primero a la oferta de tablas del rival.");
+            if (currentOffer.getId().equals(userId)) {
+                throw new IllegalArgumentException("Ya ofreciste tablas; espera la respuesta del rival.");
+            }
+            throw new IllegalArgumentException("Responde primero a la oferta de tablas del rival.");
         }
         //Guarda como oferente al jugador identificado por userId.
-        game.setDrawOfferer(game.getWhitePlayer().getId().equals(userId)
-                ? game.getWhitePlayer()
-                : game.getBlackPlayer());
+        if (game.getWhitePlayer().getId().equals(userId)) {
+            game.setDrawOfferer(game.getWhitePlayer());
+        } else {
+            game.setDrawOfferer(game.getBlackPlayer());
+        }
         //Persiste la oferta pendiente.
         gameRepository.save(game);
         //Devuelve el estado que incluye quién propuso tablas.
@@ -163,9 +179,11 @@ public class GameService {
         //Si no había oferta y el jugador acepta, interpreta la acción como una nueva propuesta.
         if (offerer == null && accept) {
             //Guarda al jugador actual como oferente de la nueva propuesta.
-            game.setDrawOfferer(game.getWhitePlayer().getId().equals(userId)
-                    ? game.getWhitePlayer()
-                    : game.getBlackPlayer());
+            if (game.getWhitePlayer().getId().equals(userId)) {
+                game.setDrawOfferer(game.getWhitePlayer());
+            } else {
+                game.setDrawOfferer(game.getBlackPlayer());
+            }
             gameRepository.save(game);
             //Construye el estado e indica por qué la aceptación no cerró la partida.
             GameState state = stateFor(game);
@@ -191,7 +209,11 @@ public class GameService {
         gameRepository.save(game);
         //Crea la respuesta con el tablero y el mensaje explicativo.
         GameState state = stateFor(game);
-        state.setResultMessage(accept ? "Ambos jugadores acordaron tablas." : "La oferta de tablas fue rechazada.");
+        if (accept) {
+            state.setResultMessage("Ambos jugadores acordaron tablas.");
+        } else {
+            state.setResultMessage("La oferta de tablas fue rechazada.");
+        }
         return state;
     }
 
@@ -238,9 +260,17 @@ public class GameService {
             state.setStatus(game.getStatus());
         }
         //Copia al DTO el id de quien ofreció tablas, o null si no hay oferta.
-        state.setDrawOfferByUserId(game.getDrawOfferer() == null ? null : game.getDrawOfferer().getId());
+        Long drawOfferByUserId = null;
+        if (game.getDrawOfferer() != null) {
+            drawOfferByUserId = game.getDrawOfferer().getId();
+        }
+        state.setDrawOfferByUserId(drawOfferByUserId);
         //Copia al DTO el id del ganador, o null si no lo hay.
-        state.setWinnerId(game.getWinner() == null ? null : game.getWinner().getId());
+        Long winnerId = null;
+        if (game.getWinner() != null) {
+            winnerId = game.getWinner().getId();
+        }
+        state.setWinnerId(winnerId);
         //Añade el mensaje correspondiente a una rendición.
         if ("RESIGNED".equals(game.getStatus())) {
             state.setResultMessage("La partida terminó por rendición.");
